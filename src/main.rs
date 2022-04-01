@@ -4,7 +4,11 @@ use bevy::{prelude::*, render::camera::ScalingMode, utils::HashMap};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable, WorldInspectorPlugin};
 
 pub const RESOLUTION: f32 = 16.0 / 9.0;
-pub const INVENTORY_SIZE: usize = 20;
+
+mod inventory;
+use inventory::{Inventory, InventoryPlugin};
+
+use crate::inventory::{give_inventory_item, take_inventory_item};
 
 #[derive(Component)]
 pub struct GameCamera;
@@ -20,22 +24,6 @@ pub struct Pickupable {
     item: ItemType,
 }
 
-#[derive(Component, Default, Inspectable)]
-pub struct Inventory {
-    items: [InventoryEntry; INVENTORY_SIZE],
-}
-
-#[derive(Default, Inspectable)]
-pub struct InventoryEntry {
-    item: ItemType,
-    count: usize,
-}
-
-#[derive(Component)]
-pub struct UiCountText {
-    slot: usize,
-}
-
 #[derive(Inspectable, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum ItemType {
     None,
@@ -44,13 +32,28 @@ pub enum ItemType {
     Twig,
     Grass,
     Wood,
-    PineCone,
 }
 
 impl Default for ItemType {
     fn default() -> Self {
         ItemType::None
     }
+}
+
+pub struct CraftingBook {
+    recipes: Vec<CraftingRecipe>,
+}
+
+#[derive(Clone)]
+pub struct CraftingRecipe {
+    needed: Vec<ItemAndCount>,
+    produces: ItemType,
+}
+
+#[derive(Clone, Copy)]
+pub struct ItemAndCount {
+    item: ItemType,
+    count: usize,
 }
 
 pub struct PlaceHolderGraphics {
@@ -72,103 +75,66 @@ fn main() {
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
+        .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(InventoryPlugin)
+        .insert_resource(CraftingBook {
+            recipes: vec![CraftingRecipe {
+                needed: vec![
+                    ItemAndCount {
+                        item: ItemType::Twig,
+                        count: 1,
+                    },
+                    ItemAndCount {
+                        item: ItemType::Flint,
+                        count: 1,
+                    },
+                ],
+                produces: ItemType::Axe,
+            }],
+        })
+        .add_system(test_crafting)
         .add_startup_system_to_stage(StartupStage::PreStartup, load_graphics)
         .add_startup_system(spawn_player)
         .add_startup_system_to_stage(StartupStage::PreStartup, spawn_camera)
-        .add_startup_system(spawn_inventory_ui)
-        .add_startup_system(spawn_flint)
+        .add_startup_system(spawn_items)
         .add_system(player_movement)
         .add_system(player_pickup)
         .add_system(camera_follow)
-        .add_plugin(WorldInspectorPlugin::new())
-        .register_inspectable::<Inventory>()
         .register_inspectable::<Player>()
         .register_inspectable::<Pickupable>()
         .run();
 }
 
-fn spawn_inventory_ui(
-    mut commands: Commands,
-    graphics: Res<PlaceHolderGraphics>,
-    camera_query: Query<Entity, With<GameCamera>>,
-    assets: Res<AssetServer>,
-) {
-    let camera_ent = camera_query.single();
-
-    let mut boxes = Vec::new();
-    let mut ui_texts = Vec::new();
-
-    let spacing = 0.15;
-    let spacing_percent = spacing / 2.0 / RESOLUTION * 100.0;
-
-    let starting_x = (-(INVENTORY_SIZE as f32) / 2.0 + 0.5) * spacing;
-    let starting_percent = (0.5 + starting_x / 2.0 / RESOLUTION) * 100.0;
-
-    let mut sprite = TextureAtlasSprite::new(graphics.box_index);
-    sprite.custom_size = Some(Vec2::splat(0.1));
-
-    for i in 0..INVENTORY_SIZE {
-        ui_texts.push(
-            commands
-                .spawn_bundle(TextBundle {
-                    style: Style {
-                        align_self: AlignSelf::Auto,
-                        position_type: PositionType::Absolute,
-                        position: Rect {
-                            bottom: Val::Percent(8.0),
-                            left: Val::Percent(starting_percent + spacing_percent * i as f32),
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    },
-                    text: Text::with_section(
-                        format!("{}", 0),
-                        TextStyle {
-                            font: assets.load("QuattrocentoSans-Regular.ttf"),
-                            font_size: 19.0,
-                            color: Color::BLACK,
-                        },
-                        TextAlignment {
-                            horizontal: HorizontalAlign::Right,
-                            ..Default::default()
-                        },
-                    ),
-                    ..Default::default()
-                })
-                .insert(UiCountText { slot: i })
-                .insert(Name::new("Inventory Count"))
-                .id(),
-        );
-        boxes.push(
-            commands
-                .spawn_bundle(SpriteSheetBundle {
-                    sprite: sprite.clone(),
-                    texture_atlas: graphics.texture_atlas.clone(),
-                    transform: Transform {
-                        translation: Vec3::new(starting_x + spacing * i as f32, -0.8, -1.0),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                })
-                .id(),
-        );
+fn can_craft(inventory: &Inventory, recipe: &CraftingRecipe) -> bool {
+    for item_and_count in recipe.needed.iter() {
+        let mut found_item = false;
+        for item_slot in inventory.items.iter() {
+            if item_slot.item == item_and_count.item && item_slot.count >= item_and_count.count {
+                found_item = true;
+            }
+        }
+        if !found_item {
+            return false;
+        }
     }
-    commands
-        .spawn_bundle(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                justify_content: JustifyContent::SpaceBetween,
-                ..Default::default()
-            },
-            color: Color::NONE.into(),
-            ..Default::default()
-        })
-        .push_children(&ui_texts)
-        .insert(Name::new("InventoryText"))
-        ;
-    commands.entity(camera_ent).push_children(&boxes);
+    true
 }
 
+fn test_crafting(
+    mut inventory_query: Query<&mut Inventory>,
+    crafting_book: Res<CraftingBook>,
+    keyboard: Res<Input<KeyCode>>,
+) {
+    let mut inventory = inventory_query.single_mut();
+    if keyboard.just_pressed(KeyCode::E) && can_craft(&inventory, &crafting_book.recipes[0]) {
+        println!("Can craft axe!");
+        for item_and_count in crafting_book.recipes[0].needed.iter() {
+            take_inventory_item(&mut inventory, item_and_count.item, item_and_count.count);
+        }
+
+        give_inventory_item(&mut inventory, crafting_book.recipes[0].produces);
+    }
+}
 fn player_pickup(
     mut commands: Commands,
     keyboard: Res<Input<KeyCode>>,
@@ -182,48 +148,90 @@ fn player_pickup(
         //TODO get closest not just first
         for (ent, transform, pickup) in pickupable_query.iter() {
             if player.arm_length
-                > Vec3::distance(transform.translation, player_transform.translation)
+                > Vec2::distance(
+                    transform.translation.truncate(),
+                    player_transform.translation.truncate(),
+                )
+                && give_inventory_item(&mut inventory, pickup.item)
             {
-                //Add it if you have it
-                for mut slot in inventory.items.iter_mut() {
-                    if slot.item == pickup.item {
-                        slot.count += 1;
-                        commands.entity(ent).despawn_recursive();
-                        return;
-                    }
-                }
-                //Pick it up if you dont
-                for mut slot in inventory.items.iter_mut() {
-                    if slot.item == ItemType::None {
-                        slot.item = pickup.item;
-                        slot.count = 1;
-                        commands.entity(ent).despawn_recursive();
-                        return;
-                    }
-                }
+                //TODO not always despawn i guess
+                commands.entity(ent).despawn_recursive();
             }
         }
     }
 }
 
-fn spawn_flint(mut commands: Commands, graphics: Res<PlaceHolderGraphics>) {
+fn spawn_item(
+    commands: &mut Commands,
+    graphics: &PlaceHolderGraphics,
+    to_spawn: ItemType,
+    position: Vec2,
+) -> Entity {
     let mut sprite = TextureAtlasSprite::new(
         *graphics
             .item_map
-            .get(&ItemType::Flint)
-            .expect("No graphic for flint"),
+            .get(&to_spawn)
+            .expect("No graphic for item"),
     );
     sprite.custom_size = Some(Vec2::splat(0.1));
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: sprite,
             texture_atlas: graphics.texture_atlas.clone(),
+            transform: Transform {
+                translation: position.extend(0.0),
+                ..Default::default()
+            },
             ..Default::default()
         })
-        .insert(Pickupable {
-            item: ItemType::Flint,
-        })
-        .insert(Name::new("Flint"));
+        .insert(Pickupable { item: to_spawn })
+        .insert(Name::new("GroundItem"))
+        .id()
+}
+
+fn spawn_items(mut commands: Commands, graphics: Res<PlaceHolderGraphics>) {
+    spawn_item(
+        &mut commands,
+        &graphics,
+        ItemType::Flint,
+        Vec2::new(0.3, 0.3),
+    );
+    spawn_item(
+        &mut commands,
+        &graphics,
+        ItemType::Flint,
+        Vec2::new(0.8, 0.4),
+    );
+    spawn_item(
+        &mut commands,
+        &graphics,
+        ItemType::Flint,
+        Vec2::new(-0.6, 0.35),
+    );
+    spawn_item(
+        &mut commands,
+        &graphics,
+        ItemType::Flint,
+        Vec2::new(0.1, 0.55),
+    );
+    spawn_item(
+        &mut commands,
+        &graphics,
+        ItemType::Twig,
+        Vec2::new(-0.3, -0.3),
+    );
+    spawn_item(
+        &mut commands,
+        &graphics,
+        ItemType::Twig,
+        Vec2::new(-0.1, -0.4),
+    );
+    spawn_item(
+        &mut commands,
+        &graphics,
+        ItemType::Twig,
+        Vec2::new(-0.8, -0.1),
+    );
 }
 
 fn camera_follow(
@@ -278,6 +286,10 @@ fn spawn_player(mut commands: Commands, graphics: Res<PlaceHolderGraphics>) {
         .spawn_bundle(SpriteSheetBundle {
             sprite: sprite,
             texture_atlas: graphics.texture_atlas.clone(),
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, 700.0),
+                ..Default::default()
+            },
             ..Default::default()
         })
         .insert(Player {
@@ -301,15 +313,38 @@ fn load_graphics(
     });
 
     let flint_index = atlas.add_texture(bevy::sprite::Rect {
-        min: Vec2::new(32.0, 0.0),
-        max: Vec2::new(48.0, 16.0),
+        min: Vec2::new(34.0, 0.0),
+        max: Vec2::new(49.0, 16.0),
+    });
+    let grass_index = atlas.add_texture(bevy::sprite::Rect {
+        min: Vec2::new(50.0, 0.0),
+        max: Vec2::new(65.0, 16.0),
+    });
+
+    let axe_index = atlas.add_texture(bevy::sprite::Rect {
+        min: Vec2::new(34.0, 18.0),
+        max: Vec2::new(49.0, 33.0),
+    });
+
+    let twigs_index = atlas.add_texture(bevy::sprite::Rect {
+        min: Vec2::new(50.0, 18.0),
+        max: Vec2::new(65.0, 33.0),
+    });
+
+    let wood_index = atlas.add_texture(bevy::sprite::Rect {
+        min: Vec2::new(34.0, 34.0),
+        max: Vec2::new(49.0, 49.0),
     });
 
     let mut item_map = HashMap::default();
     item_map.insert(ItemType::Flint, flint_index);
+    item_map.insert(ItemType::Grass, grass_index);
+    item_map.insert(ItemType::Twig, twigs_index);
+    item_map.insert(ItemType::Axe, axe_index);
+    item_map.insert(ItemType::Wood, wood_index);
 
     let box_index = atlas.add_texture(bevy::sprite::Rect {
-        min: Vec2::new(0.0, 32.0),
+        min: Vec2::new(0.0, 34.0),
         max: Vec2::new(32.0, 64.0),
     });
 
