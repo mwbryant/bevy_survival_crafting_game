@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::{GameCamera, ItemType, PlaceHolderGraphics, RESOLUTION};
+use crate::prelude::{GameCamera, ItemType, PlaceHolderGraphics, RESOLUTION};
 
 pub const INVENTORY_SIZE: usize = 5;
 
