@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::prelude::{GameCamera, ItemType, PlaceHolderGraphics, RESOLUTION};
+use crate::{
+    item::WorldObject,
+    prelude::{GameCamera, ItemType, PlaceHolderGraphics, RESOLUTION},
+};
 
 pub const INVENTORY_SIZE: usize = 5;
 
@@ -118,7 +121,7 @@ fn update_inventory_ui(
                                     .expect("Nonsprite child of box");
                                 sprite.index = *graphics
                                     .item_map
-                                    .get(&slot.item)
+                                    .get(&WorldObject::Item(slot.item))
                                     .expect("No graphic for item");
                             }
                         }
@@ -127,7 +130,7 @@ fn update_inventory_ui(
                             let mut sprite = TextureAtlasSprite::new(
                                 *graphics
                                     .item_map
-                                    .get(&slot.item)
+                                    .get(&WorldObject::Item(slot.item))
                                     .expect("No graphic for item"),
                             );
                             sprite.custom_size = Some(Vec2::splat(0.10));

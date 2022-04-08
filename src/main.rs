@@ -1,4 +1,5 @@
 #![allow(clippy::redundant_field_names)]
+#![allow(clippy::expect_fun_call)]
 #![allow(clippy::type_complexity)]
 use bevy::prelude::*;
 use bevy_inspector_egui::WorldInspectorPlugin;

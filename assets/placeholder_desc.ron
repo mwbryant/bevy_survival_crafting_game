@@ -1,0 +1,16 @@
+(
+    map : {
+        Item(Twig): MyRect(
+            min: (50.0, 18.0),
+            max: (65.0, 33.0),
+        ),
+        Sapling: MyRect(
+            min: (74.0, 11.0),
+            max: (94.0,31.0)
+        ),
+        DeadSapling: MyRect(
+            min: (106.0, 11.0),
+            max: (126.0,31.0)
+        ),
+    }
+)

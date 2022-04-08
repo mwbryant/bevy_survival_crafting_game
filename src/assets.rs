@@ -1,9 +1,25 @@
+use std::fs;
+
 use bevy::prelude::*;
+use bevy::reflect::erased_serde::private::serde::Deserialize;
 use bevy::utils::HashMap;
 
+use crate::item::WorldObject;
 use crate::prelude::ItemType;
+use ron::de::from_str;
 
 pub struct GameAssetsPlugin;
+
+#[derive(Default, Clone, Copy, Debug, Reflect, Deserialize)]
+pub struct MyRect {
+    pub min: Vec2,
+    pub max: Vec2,
+}
+
+#[derive(Deserialize)]
+pub struct GraphicsDesc {
+    map: HashMap<WorldObject, MyRect>,
+}
 
 impl Plugin for GameAssetsPlugin {
     fn build(&self, app: &mut App) {
@@ -20,7 +36,7 @@ pub struct PlaceHolderGraphics {
     pub texture_atlas: Handle<TextureAtlas>,
     pub player_index: usize,
     pub box_index: usize,
-    pub item_map: HashMap<ItemType, usize>,
+    pub item_map: HashMap<WorldObject, usize>,
 }
 
 impl GameAssetsPlugin {
@@ -30,11 +46,31 @@ impl GameAssetsPlugin {
         mut texture_assets: ResMut<Assets<TextureAtlas>>,
     ) {
         let image_handle = assets.load("placeholder.png");
+        let sprite_desc = fs::read_to_string("assets/placeholder_desc.ron").unwrap();
+
+        let sprite_desc: GraphicsDesc = match from_str(&sprite_desc) {
+            Ok(x) => x,
+            Err(e) => {
+                println!("Failed to load config: {}", e);
+                std::process::exit(1);
+            }
+        };
         let mut atlas = TextureAtlas::new_empty(image_handle, Vec2::splat(256.0));
+
         let player_index = atlas.add_texture(bevy::sprite::Rect {
             min: Vec2::splat(0.0),
             max: Vec2::splat(32.0),
         });
+
+        let mut item_map = HashMap::default();
+        for (item, rect) in sprite_desc.map.iter() {
+            println!("Found graphic {:?}", item);
+            let index = atlas.add_texture(bevy::sprite::Rect {
+                min: rect.min,
+                max: rect.max,
+            });
+            item_map.insert(*item, index);
+        }
 
         let flint_index = atlas.add_texture(bevy::sprite::Rect {
             min: Vec2::new(34.0, 0.0),
@@ -60,12 +96,10 @@ impl GameAssetsPlugin {
             max: Vec2::new(49.0, 49.0),
         });
 
-        let mut item_map = HashMap::default();
-        item_map.insert(ItemType::Flint, flint_index);
-        item_map.insert(ItemType::Grass, grass_index);
-        item_map.insert(ItemType::Twig, twigs_index);
-        item_map.insert(ItemType::Axe, axe_index);
-        item_map.insert(ItemType::Wood, wood_index);
+        item_map.insert(WorldObject::Item(ItemType::Flint), flint_index);
+        item_map.insert(WorldObject::Item(ItemType::Grass), grass_index);
+        item_map.insert(WorldObject::Item(ItemType::Axe), axe_index);
+        item_map.insert(WorldObject::Item(ItemType::Wood), wood_index);
 
         let box_index = atlas.add_texture(bevy::sprite::Rect {
             min: Vec2::new(0.0, 34.0),
