@@ -1,6 +1,6 @@
+use crate::prelude::{Player, RESOLUTION};
 use bevy::prelude::*;
 use bevy::render::camera::ScalingMode;
-use crate::prelude::{Player, RESOLUTION};
 
 pub struct GameCameraPlugin;
 
@@ -9,10 +9,11 @@ pub struct GameCamera;
 
 impl Plugin for GameCameraPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_startup_system_to_stage(StartupStage::PreStartup,
-                                         Self::spawn_camera.label("camera"))
-            .add_system(Self::camera_follow);
+        app.add_startup_system_to_stage(
+            StartupStage::PreStartup,
+            Self::spawn_camera.label("camera"),
+        )
+        .add_system(Self::camera_follow);
     }
 }
 
@@ -40,6 +41,4 @@ impl GameCameraPlugin {
         camera_transform.translation.x = player_transform.x;
         camera_transform.translation.y = player_transform.y;
     }
-
-
 }

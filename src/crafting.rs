@@ -1,34 +1,27 @@
 use bevy::prelude::*;
 
-use crate::prelude::{
-    ItemAndCount,
-    ItemType,
-    Inventory,
-    give_inventory_item,
-    take_inventory_item
-};
+use crate::prelude::{give_inventory_item, take_inventory_item, Inventory, ItemAndCount, ItemType};
 
 pub struct CraftingPlugin;
 
 impl Plugin for CraftingPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .insert_resource(CraftingBook {
-                recipes: vec![CraftingRecipe {
-                    needed: vec![
-                        ItemAndCount {
-                            item: ItemType::Twig,
-                            count: 1,
-                        },
-                        ItemAndCount {
-                            item: ItemType::Flint,
-                            count: 1,
-                        },
-                    ],
-                    produces: ItemType::Axe,
-                }],
-            })
-            .add_system(Self::test_crafting);
+        app.insert_resource(CraftingBook {
+            recipes: vec![CraftingRecipe {
+                needed: vec![
+                    ItemAndCount {
+                        item: ItemType::Twig,
+                        count: 1,
+                    },
+                    ItemAndCount {
+                        item: ItemType::Flint,
+                        count: 1,
+                    },
+                ],
+                produces: ItemType::Axe,
+            }],
+        })
+        .add_system(Self::test_crafting);
     }
 }
 

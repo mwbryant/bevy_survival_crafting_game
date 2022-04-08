@@ -7,9 +7,10 @@ pub struct GameAssetsPlugin;
 
 impl Plugin for GameAssetsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_startup_system_to_stage(StartupStage::PreStartup,
-                                         Self::load_graphics.label("graphics"));
+        app.add_startup_system_to_stage(
+            StartupStage::PreStartup,
+            Self::load_graphics.label("graphics"),
+        );
     }
 }
 

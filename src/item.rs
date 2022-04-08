@@ -1,13 +1,12 @@
+use crate::prelude::PlaceHolderGraphics;
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
-use crate::prelude::PlaceHolderGraphics;
 
 pub struct ItemsPlugin;
 
 impl Plugin for ItemsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_startup_system(Self::spawn_items)
+        app.add_startup_system(Self::spawn_items)
             .register_inspectable::<Pickupable>();
     }
 }
@@ -113,4 +112,3 @@ fn spawn_item(
         .insert(Name::new("GroundItem"))
         .id()
 }
-

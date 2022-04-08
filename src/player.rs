@@ -1,14 +1,13 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::prelude::{Inventory, Pickupable, PlaceHolderGraphics, give_inventory_item};
+use crate::prelude::{give_inventory_item, Inventory, Pickupable, PlaceHolderGraphics};
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_startup_system(Self::spawn_player)
+        app.add_startup_system(Self::spawn_player)
             .add_system(Self::player_movement)
             .add_system(Self::player_pickup)
             .register_inspectable::<Player>();
@@ -36,9 +35,9 @@ impl PlayerPlugin {
             for (ent, transform, pickup) in pickupable_query.iter() {
                 if player.arm_length
                     > Vec2::distance(
-                    transform.translation.truncate(),
-                    player_transform.translation.truncate(),
-                )
+                        transform.translation.truncate(),
+                        player_transform.translation.truncate(),
+                    )
                     && give_inventory_item(&mut inventory, pickup.item)
                 {
                     //TODO not always despawn i guess
@@ -89,5 +88,4 @@ impl PlayerPlugin {
             .insert(Inventory::default())
             .insert(Name::new("Player"));
     }
-
 }
