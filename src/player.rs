@@ -1,14 +1,16 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::prelude::{Inventory, Pickupable, PlaceHolderGraphics, give_inventory_item};
+use crate::{
+    inventory::can_pickup,
+    prelude::{give_inventory_item, Inventory, Pickupable, PlaceHolderGraphics},
+};
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_startup_system(Self::spawn_player)
+        app.add_startup_system(Self::spawn_player)
             .add_system(Self::player_movement)
             .add_system(Self::player_pickup)
             .register_inspectable::<Player>();
@@ -32,18 +34,26 @@ impl PlayerPlugin {
         //Press space to pickup items
         //TODO if held walk to nearest
         if keyboard.just_pressed(KeyCode::Space) {
-            //TODO get closest not just first
-            for (ent, transform, pickup) in pickupable_query.iter() {
-                if player.arm_length
-                    > Vec2::distance(
-                    transform.translation.truncate(),
-                    player_transform.translation.truncate(),
-                )
-                    && give_inventory_item(&mut inventory, pickup.item)
-                {
-                    //TODO not always despawn i guess
-                    commands.entity(ent).despawn_recursive();
-                }
+            if let Some((ent, pickup)) = pickupable_query
+                .iter()
+                .filter_map(|(ent, transform, pickup)| {
+                    let distance = transform
+                        .translation
+                        .truncate()
+                        .distance(player_transform.translation.truncate());
+                    if player.arm_length > distance {
+                        Some((ent, distance, pickup))
+                    } else {
+                        None
+                    }
+                })
+                .filter(|(_, _, pickup)| can_pickup(&inventory, pickup.item))
+                .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Greater))
+                .map(|(ent, _, pickup)| (ent, pickup))
+            {
+                give_inventory_item(&mut inventory, pickup.item);
+                //TODO not always despawn i guess
+                commands.entity(ent).despawn_recursive();
             }
         }
     }
@@ -89,5 +99,4 @@ impl PlayerPlugin {
             .insert(Inventory::default())
             .insert(Name::new("Player"));
     }
-
 }
