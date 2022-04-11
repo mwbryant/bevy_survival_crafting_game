@@ -1,24 +1,20 @@
 #![allow(clippy::redundant_field_names)]
+#![allow(clippy::expect_fun_call)]
 #![allow(clippy::type_complexity)]
 use bevy::prelude::*;
 use bevy_inspector_egui::WorldInspectorPlugin;
 
-mod item;
-mod inventory;
-mod crafting;
-mod player;
-mod game_camera;
 mod assets;
+mod crafting;
+mod game_camera;
+mod inventory;
+mod item;
+mod player;
 mod prelude;
 
 // todo implement `PluginGroup`
 use prelude::{
-    CraftingPlugin,
-    GameAssetsPlugin,
-    GameCameraPlugin,
-    InventoryPlugin,
-    ItemsPlugin,
-    PlayerPlugin
+    CraftingPlugin, GameAssetsPlugin, GameCameraPlugin, InventoryPlugin, ItemsPlugin, PlayerPlugin,
 };
 
 fn main() {
@@ -42,4 +38,3 @@ fn main() {
         .add_plugin(GameCameraPlugin)
         .run();
 }
-

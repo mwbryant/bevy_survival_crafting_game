@@ -6,6 +6,7 @@ use crate::{
     prelude::{give_inventory_item, Inventory, Pickupable, PlaceHolderGraphics},
 };
 
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
@@ -52,8 +53,19 @@ impl PlayerPlugin {
                 .map(|(ent, _, pickup)| (ent, pickup))
             {
                 give_inventory_item(&mut inventory, pickup.item);
-                //TODO not always despawn i guess
-                commands.entity(ent).despawn_recursive();
+
+                    if let Some(new_object) = pickup.drops {
+                        //Become what you always were meant to be
+                        commands
+                            .entity(ent)
+                            .remove::<Pickupable>()
+                            .insert(new_object);
+                    } else {
+                        //Despawn if you become nothing
+                        commands.entity(ent).despawn_recursive();
+                    }
+                    return;
+                }
             }
         }
     }
