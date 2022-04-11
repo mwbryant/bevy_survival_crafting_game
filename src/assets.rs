@@ -86,11 +86,6 @@ impl GameAssetsPlugin {
             max: Vec2::new(49.0, 33.0),
         });
 
-        let twigs_index = atlas.add_texture(bevy::sprite::Rect {
-            min: Vec2::new(50.0, 18.0),
-            max: Vec2::new(65.0, 33.0),
-        });
-
         let wood_index = atlas.add_texture(bevy::sprite::Rect {
             min: Vec2::new(34.0, 34.0),
             max: Vec2::new(49.0, 49.0),

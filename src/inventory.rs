@@ -89,6 +89,20 @@ pub fn give_inventory_item(inventory: &mut Inventory, to_give: ItemType) -> bool
     false
 }
 
+pub fn can_pickup(inventory: &Inventory, to_give: ItemType) -> bool {
+    for slot in inventory.items.iter() {
+        if slot.item == to_give {
+            return true;
+        }
+    }
+    for slot in inventory.items.iter() {
+        if slot.item == ItemType::None {
+            return true;
+        }
+    }
+    false
+}
+
 //XXX probably buggy
 fn update_inventory_ui(
     mut commands: Commands,

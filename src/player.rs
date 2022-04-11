@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::prelude::{give_inventory_item, Inventory, Pickupable, PlaceHolderGraphics};
+use crate::{
+    inventory::can_pickup,
+    prelude::{give_inventory_item, Inventory, Pickupable, PlaceHolderGraphics},
+};
 
 pub struct PlayerPlugin;
 
@@ -31,26 +34,34 @@ impl PlayerPlugin {
         //Press space to pickup items
         //TODO if held walk to nearest
         if keyboard.just_pressed(KeyCode::Space) {
-            //TODO get closest not just first
-            for (ent, transform, pickup) in pickupable_query.iter() {
-                if player.arm_length
-                    > Vec2::distance(
-                        transform.translation.truncate(),
-                        player_transform.translation.truncate(),
-                    )
-                    && give_inventory_item(&mut inventory, pickup.item)
-                {
-                    if let Some(new_object) = pickup.drops {
-                        //Become what you always were meant to be
-                        commands
-                            .entity(ent)
-                            .remove::<Pickupable>()
-                            .insert(new_object);
+            if let Some((ent, pickup)) = pickupable_query
+                .iter()
+                .filter_map(|(ent, transform, pickup)| {
+                    let distance = transform
+                        .translation
+                        .truncate()
+                        .distance(player_transform.translation.truncate());
+                    if player.arm_length > distance {
+                        Some((ent, distance, pickup))
                     } else {
-                        //Despawn if you become nothing
-                        commands.entity(ent).despawn_recursive();
+                        None
                     }
-                    return;
+                })
+                .filter(|(_, _, pickup)| can_pickup(&inventory, pickup.item))
+                .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Greater))
+                .map(|(ent, _, pickup)| (ent, pickup))
+            {
+                give_inventory_item(&mut inventory, pickup.item);
+
+                if let Some(new_object) = pickup.drops {
+                    //Become what you always were meant to be
+                    commands
+                        .entity(ent)
+                        .remove::<Pickupable>()
+                        .insert(new_object);
+                } else {
+                    //Despawn if you become nothing
+                    commands.entity(ent).despawn_recursive();
                 }
             }
         }
