@@ -6,7 +6,6 @@ use crate::{
     prelude::{give_inventory_item, Inventory, Pickupable, PlaceHolderGraphics},
 };
 
-
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
@@ -54,17 +53,15 @@ impl PlayerPlugin {
             {
                 give_inventory_item(&mut inventory, pickup.item);
 
-                    if let Some(new_object) = pickup.drops {
-                        //Become what you always were meant to be
-                        commands
-                            .entity(ent)
-                            .remove::<Pickupable>()
-                            .insert(new_object);
-                    } else {
-                        //Despawn if you become nothing
-                        commands.entity(ent).despawn_recursive();
-                    }
-                    return;
+                if let Some(new_object) = pickup.drops {
+                    //Become what you always were meant to be
+                    commands
+                        .entity(ent)
+                        .remove::<Pickupable>()
+                        .insert(new_object);
+                } else {
+                    //Despawn if you become nothing
+                    commands.entity(ent).despawn_recursive();
                 }
             }
         }

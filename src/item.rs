@@ -111,6 +111,22 @@ impl ItemsPlugin {
             WorldObject::Item(ItemType::Flint),
             Some(ItemType::Flint),
             None,
+            Vec2::new(0.40, 0.3),
+        );
+        spawn_world_object(
+            &mut commands,
+            &graphics,
+            WorldObject::Item(ItemType::Flint),
+            Some(ItemType::Flint),
+            None,
+            Vec2::new(0.3, 0.40),
+        );
+        spawn_world_object(
+            &mut commands,
+            &graphics,
+            WorldObject::Item(ItemType::Flint),
+            Some(ItemType::Flint),
+            None,
             Vec2::new(0.3, 0.3),
         );
     }
