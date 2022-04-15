@@ -26,6 +26,8 @@ pub enum ItemType {
     Twig,
     Grass,
     Wood,
+    //FIXME Is actually not an item, is a world object!
+    Fire,
 }
 
 pub struct ItemsPlugin;
@@ -35,10 +37,14 @@ impl Plugin for ItemsPlugin {
         app.add_startup_system(Self::spawn_flint)
             .add_startup_system(Self::spawn_sapling)
             .add_system(Self::update_graphics)
-            .add_system(Self::sapling_regrowth)
-            .register_type::<RegrowthTimer>()
-            .register_inspectable::<WorldObject>()
-            .register_inspectable::<Pickupable>();
+            .add_system(Self::sapling_regrowth);
+        //FIXME I don't think this is working...
+        if cfg!(debug_assertions) {
+            app.register_type::<RegrowthTimer>()
+                .register_inspectable::<WorldObject>()
+                .register_inspectable::<ItemAndCount>()
+                .register_inspectable::<Pickupable>();
+        }
     }
 }
 
@@ -138,7 +144,7 @@ impl Default for ItemType {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default, Inspectable)]
 pub struct ItemAndCount {
     pub item: ItemType,
     pub count: usize,

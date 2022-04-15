@@ -1,5 +1,9 @@
 (
     map : {
+        Item(None): MyRect(
+            min: (241.0, 241.0),
+            max: (255.0, 255.0),
+        ),
         Item(Twig): MyRect(
             min: (50.0, 18.0),
             max: (65.0, 33.0),
@@ -11,6 +15,10 @@
         DeadSapling: MyRect(
             min: (106.0, 11.0),
             max: (126.0,31.0)
+        ),
+        Item(Fire): MyRect(
+            min: (35.0, 50.0),
+            max: (62.0,82.0)
         ),
     }
 )

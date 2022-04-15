@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::{
-    item::WorldObject,
+    item::{ItemAndCount, WorldObject},
     prelude::{GameCamera, ItemType, PlaceHolderGraphics, RESOLUTION},
 };
 
@@ -12,13 +12,7 @@ pub struct InventoryPlugin;
 
 #[derive(Component, Default, Inspectable)]
 pub struct Inventory {
-    pub items: [InventoryEntry; INVENTORY_SIZE],
-}
-
-#[derive(Default, Inspectable)]
-pub struct InventoryEntry {
-    pub item: ItemType,
-    pub count: usize,
+    pub items: [ItemAndCount; INVENTORY_SIZE],
 }
 
 #[derive(Component)]
@@ -27,12 +21,12 @@ pub struct UiCountText {
 }
 
 #[derive(Component)]
-pub struct UiBox {
+pub struct InventoryBox {
     slot: usize,
 }
 
 #[derive(Component)]
-pub struct UiBoxContents;
+pub struct InventoryBoxContents;
 
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
@@ -50,9 +44,9 @@ fn inventory_consistency_forcer(mut inventory_query: Query<&mut Inventory>) {
         if slot.count == 0 {
             slot.item = ItemType::None;
         }
-        if slot.item == ItemType::None {
-            slot.count = 0;
-        }
+        //if slot.item == ItemType::None {
+        //slot.count = 0;
+        //}
     }
 }
 
@@ -108,8 +102,8 @@ fn update_inventory_ui(
     mut commands: Commands,
     inventory_query: Query<&Inventory>,
     graphics: Res<PlaceHolderGraphics>,
-    box_query: Query<(Entity, Option<&Children>, &UiBox)>,
-    mut box_contents_query: Query<&mut TextureAtlasSprite, With<UiBoxContents>>,
+    box_query: Query<(Entity, Option<&Children>, &InventoryBox)>,
+    mut box_contents_query: Query<&mut TextureAtlasSprite, With<InventoryBoxContents>>,
     mut text_query: Query<(&UiCountText, &mut Text)>,
 ) {
     let inventory = inventory_query.single();
@@ -155,7 +149,7 @@ fn update_inventory_ui(
                                     ..Default::default()
                                 })
                                 .insert(Name::new("ItemGraphic"))
-                                .insert(UiBoxContents)
+                                .insert(InventoryBoxContents)
                                 .id();
                             commands.entity(box_ent).add_child(graphic);
                         }
@@ -211,6 +205,8 @@ fn spawn_inventory_ui(
                     text: Text::with_section(
                         format!("{}", 0),
                         TextStyle {
+                            //TODO don't load the font everytime please
+                            //Or is the assetserver smart enough to not reload?
                             font: assets.load("QuattrocentoSans-Regular.ttf"),
                             font_size: 22.0,
                             color: Color::BLACK,
@@ -237,7 +233,8 @@ fn spawn_inventory_ui(
                     },
                     ..Default::default()
                 })
-                .insert(UiBox { slot: i })
+                .insert(InventoryBox { slot: i })
+                .insert(Name::new("InventoryBox"))
                 .id(),
         );
     }

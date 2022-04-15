@@ -9,9 +9,11 @@ mod crafting;
 mod game_camera;
 mod inventory;
 mod item;
+mod mouse;
 mod player;
 mod prelude;
 
+use mouse::{MousePlugin, MousePosition};
 // todo implement `PluginGroup`
 use prelude::{
     CraftingPlugin, GameAssetsPlugin, GameCameraPlugin, InventoryPlugin, ItemsPlugin, PlayerPlugin,
@@ -32,6 +34,7 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(GameAssetsPlugin)
         .add_plugin(PlayerPlugin)
+        .add_plugin(MousePlugin)
         .add_plugin(ItemsPlugin)
         .add_plugin(InventoryPlugin)
         .add_plugin(CraftingPlugin)

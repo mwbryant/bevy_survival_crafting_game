@@ -15,3 +15,6 @@ pub use player::{Player, PlayerPlugin};
 
 use crate::item;
 pub use item::{ItemAndCount, ItemType, ItemsPlugin, Pickupable};
+
+use crate::mouse;
+pub use mouse::{MousePlugin, MousePosition};
