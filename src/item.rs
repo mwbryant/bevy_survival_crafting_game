@@ -62,27 +62,26 @@ impl ItemsPlugin {
         time: Res<Time>,
     ) {
         for (ent, mut sapling, timer) in sapling_query.iter_mut() {
-            if *sapling == WorldObject::DeadSapling {
-                match timer {
-                    Some(mut timer) => {
-                        timer.timer.tick(time.delta());
-                        if timer.timer.finished() {
-                            commands.entity(ent).remove::<RegrowthTimer>();
-                            *sapling = WorldObject::Sapling;
-                            //FIXME dont re add pickupable, track if can be picked up?
-                            //Idk how this work for renewables
-                            commands.entity(ent).insert(Pickupable {
-                                item: ItemType::Twig,
-                                drops: Some(WorldObject::DeadSapling),
-                            });
-                        }
-                    }
-                    None => {
-                        commands.entity(ent).insert(RegrowthTimer {
-                            timer: Timer::from_seconds(1.0, false),
-                        });
-                    }
+            if *sapling != WorldObject::DeadSapling {
+                continue;
+            }
+            if let Some(mut timer) = timer {
+                timer.timer.tick(time.delta());
+                if !timer.timer.finished() {
+                    continue;
                 }
+                commands.entity(ent).remove::<RegrowthTimer>();
+                *sapling = WorldObject::Sapling;
+                //FIXME dont re add pickupable, track if can be picked up?
+                //Idk how this work for renewables
+                commands.entity(ent).insert(Pickupable {
+                    item: ItemType::Twig,
+                    drops: Some(WorldObject::DeadSapling),
+                });
+            } else {
+                commands.entity(ent).insert(RegrowthTimer {
+                    timer: Timer::from_seconds(1.0, false),
+                });
             }
         }
     }
@@ -167,7 +166,7 @@ fn spawn_world_object(
     sprite.custom_size = Some(Vec2::splat(0.1));
     let item = commands
         .spawn_bundle(SpriteSheetBundle {
-            sprite: sprite,
+            sprite,
             texture_atlas: graphics.texture_atlas.clone(),
             transform: Transform {
                 translation: position.extend(0.0),
@@ -182,7 +181,7 @@ fn spawn_world_object(
     if let Some(pickup) = pickup {
         commands.entity(item).insert(Pickupable {
             item: pickup,
-            drops: drops,
+            drops,
         });
     }
     item

@@ -69,38 +69,38 @@ impl CraftingPlugin {
             assert!(transform.scale == Vec3::splat(1.0));
             let translation = transform.translation;
             //TODO use bevy aabb collide method
-            if mouse_pos.0.x > translation.x - 0.5 * CRAFTING_BOX_SIZE
+            if !(mouse_pos.0.x > translation.x - 0.5 * CRAFTING_BOX_SIZE
                 && mouse_pos.0.x < translation.x + 0.5 * CRAFTING_BOX_SIZE
                 && mouse_pos.0.y > translation.y - 0.5 * CRAFTING_BOX_SIZE
-                && mouse_pos.0.y < translation.y + 0.5 * CRAFTING_BOX_SIZE
+                && mouse_pos.0.y < translation.y + 0.5 * CRAFTING_BOX_SIZE)
             {
-                //We are over a box
-                let mut inventory = inventory_query.single_mut();
-                if mouse.just_pressed(MouseButton::Left) {
-                    //TODO just check if the button is active,
-                    // button should if can craft
-                    if can_craft(
-                        &inventory,
-                        &crafting_book.recipes[crafting_box.recipe_index],
-                    ) {
-                        for item_and_count in crafting_book.recipes[crafting_box.recipe_index]
-                            .needed
-                            .iter()
-                        {
-                            take_inventory_item(
-                                &mut inventory,
-                                item_and_count.item,
-                                item_and_count.count,
-                            );
-                        }
-
-                        give_inventory_item(
-                            &mut inventory,
-                            crafting_book.recipes[crafting_box.recipe_index].produces,
-                        );
-                    }
-                }
+                continue;
             }
+            //We are over a box
+            let mut inventory = inventory_query.single_mut();
+            if !mouse.just_pressed(MouseButton::Left) {
+                continue;
+            }
+            //TODO just check if the button is active,
+            // button should if can craft
+            if !can_craft(
+                &inventory,
+                &crafting_book.recipes[crafting_box.recipe_index],
+            ) {
+                continue;
+            }
+
+            crafting_book.recipes[crafting_box.recipe_index]
+                .needed
+                .iter()
+                .for_each(|item_and_count| {
+                    take_inventory_item(&mut inventory, item_and_count.item, item_and_count.count);
+                });
+
+            give_inventory_item(
+                &mut inventory,
+                crafting_book.recipes[crafting_box.recipe_index].produces,
+            );
         }
     }
 
@@ -112,8 +112,6 @@ impl CraftingPlugin {
     ) {
         let camera_ent = camera_query.single();
 
-        let mut boxes = Vec::new();
-
         let spacing = 0.20;
 
         let starting_y = (book.recipes.len() as f32 / 2.0 + 0.5) * spacing;
@@ -122,20 +120,20 @@ impl CraftingPlugin {
         sprite.custom_size = Some(Vec2::splat(0.15));
 
         //could enumerate book
-        for (i, recipe) in book.recipes.iter().enumerate() {
-            boxes.push(
+        let boxes: Vec<Entity> = book
+            .recipes
+            .iter()
+            .enumerate()
+            .map(|(i, recipe)| {
                 commands
                     .spawn_bundle(SpriteSheetBundle {
                         sprite: sprite.clone(),
                         texture_atlas: graphics.texture_atlas.clone(),
-                        transform: Transform {
-                            translation: Vec3::new(
-                                -0.9 * RESOLUTION,
-                                starting_y - spacing * i as f32,
-                                -1.0,
-                            ),
-                            ..Default::default()
-                        },
+                        transform: Transform::from_xyz(
+                            -0.9 * RESOLUTION,
+                            starting_y - spacing * i as f32,
+                            -1.0,
+                        ),
                         ..Default::default()
                     })
                     .insert(CraftingBox {
@@ -153,15 +151,15 @@ impl CraftingPlugin {
                         sprite.custom_size = Some(Vec2::splat(CRAFTING_BOX_SIZE));
                         let graphic = parent
                             .spawn_bundle(SpriteSheetBundle {
-                                sprite: sprite,
+                                sprite,
                                 texture_atlas: graphics.texture_atlas.clone(),
                                 ..Default::default()
                             })
                             .insert(Name::new("ItemGraphic"));
                     })
-                    .id(),
-            );
-        }
+                    .id()
+            })
+            .collect();
         commands.entity(camera_ent).push_children(&boxes);
     }
 }
@@ -177,16 +175,9 @@ pub struct CraftingRecipe {
 }
 
 fn can_craft(inventory: &Inventory, recipe: &CraftingRecipe) -> bool {
-    for item_and_count in recipe.needed.iter() {
-        let mut found_item = false;
-        for item_slot in inventory.items.iter() {
-            if item_slot.item == item_and_count.item && item_slot.count >= item_and_count.count {
-                found_item = true;
-            }
-        }
-        if !found_item {
-            return false;
-        }
-    }
-    true
+    recipe.needed.iter().any(|item_and_count| {
+        inventory.items.iter().any(|item_slot| {
+            item_slot.item == item_and_count.item && item_slot.count >= item_and_count.count
+        })
+    })
 }
