@@ -39,6 +39,13 @@ pub struct PlaceHolderGraphics {
     pub item_map: HashMap<WorldObject, usize>,
 }
 
+fn create_rect(a: (f32, f32), b: (f32, f32)) -> bevy::sprite::Rect {
+    bevy::sprite::Rect {
+        min: Vec2::new(a.0, a.1),
+        max: Vec2::new(b.0, b.1),
+    }
+}
+
 impl GameAssetsPlugin {
     fn load_graphics(
         mut commands: Commands,
@@ -48,19 +55,14 @@ impl GameAssetsPlugin {
         let image_handle = assets.load("placeholder.png");
         let sprite_desc = fs::read_to_string("assets/placeholder_desc.ron").unwrap();
 
-        let sprite_desc: GraphicsDesc = match from_str(&sprite_desc) {
-            Ok(x) => x,
-            Err(e) => {
-                println!("Failed to load config: {}", e);
-                std::process::exit(1);
-            }
-        };
+        let sprite_desc: GraphicsDesc = from_str(&sprite_desc).unwrap_or_else(|e| {
+            println!("Failed to load config: {}", e);
+            std::process::exit(1);
+        });
+
         let mut atlas = TextureAtlas::new_empty(image_handle, Vec2::splat(256.0));
 
-        let player_index = atlas.add_texture(bevy::sprite::Rect {
-            min: Vec2::splat(0.0),
-            max: Vec2::splat(32.0),
-        });
+        let player_index = atlas.add_texture(create_rect((0., 0.), (32., 32.)));
 
         let mut item_map = HashMap::default();
         for (item, rect) in sprite_desc.map.iter() {
@@ -72,42 +74,25 @@ impl GameAssetsPlugin {
             item_map.insert(*item, index);
         }
 
-        let flint_index = atlas.add_texture(bevy::sprite::Rect {
-            min: Vec2::new(34.0, 0.0),
-            max: Vec2::new(49.0, 16.0),
-        });
-        let grass_index = atlas.add_texture(bevy::sprite::Rect {
-            min: Vec2::new(50.0, 0.0),
-            max: Vec2::new(65.0, 16.0),
-        });
-
-        let axe_index = atlas.add_texture(bevy::sprite::Rect {
-            min: Vec2::new(34.0, 18.0),
-            max: Vec2::new(49.0, 33.0),
-        });
-
-        let wood_index = atlas.add_texture(bevy::sprite::Rect {
-            min: Vec2::new(34.0, 34.0),
-            max: Vec2::new(49.0, 49.0),
-        });
+        let flint_index = atlas.add_texture(create_rect((34., 0.), (49., 16.)));
+        let grass_index = atlas.add_texture(create_rect((50., 0.), (65., 16.)));
+        let axe_index = atlas.add_texture(create_rect((34., 18.), (49., 33.)));
+        let wood_index = atlas.add_texture(create_rect((34., 34.), (49., 49.)));
 
         item_map.insert(WorldObject::Item(ItemType::Flint), flint_index);
         item_map.insert(WorldObject::Item(ItemType::Grass), grass_index);
         item_map.insert(WorldObject::Item(ItemType::Axe), axe_index);
         item_map.insert(WorldObject::Item(ItemType::Wood), wood_index);
 
-        let box_index = atlas.add_texture(bevy::sprite::Rect {
-            min: Vec2::new(0.0, 34.0),
-            max: Vec2::new(32.0, 64.0),
-        });
+        let box_index = atlas.add_texture(create_rect((0., 34.), (32., 64.)));
 
         let atlas_handle = texture_assets.add(atlas);
 
         commands.insert_resource(PlaceHolderGraphics {
             texture_atlas: atlas_handle,
-            player_index: player_index,
-            box_index: box_index,
-            item_map: item_map,
+            player_index,
+            box_index,
+            item_map,
         });
     }
 }

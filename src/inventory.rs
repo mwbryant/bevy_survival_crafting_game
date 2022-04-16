@@ -66,35 +66,27 @@ pub fn take_inventory_item(inventory: &mut Inventory, to_take: ItemType, amount:
 //TODO result in future if inventory full
 pub fn give_inventory_item(inventory: &mut Inventory, to_give: ItemType) -> bool {
     //Add it if you have it
-    for mut slot in inventory.items.iter_mut() {
-        if slot.item == to_give {
-            slot.count += 1;
-            return true;
-        }
+    if let Some(slot) = inventory.items.iter_mut().find(|slot| slot.item == to_give) {
+        slot.count += 1;
+        return true;
     }
-    //Pick it up if you dont
-    for mut slot in inventory.items.iter_mut() {
-        if slot.item == ItemType::None {
+    inventory
+        .items
+        .iter_mut()
+        .find(|slot| slot.item == ItemType::None)
+        .map(|slot| {
             slot.item = to_give;
             slot.count = 1;
-            return true;
-        }
-    }
-    false
+        })
+        .is_some()
 }
 
 pub fn can_pickup(inventory: &Inventory, to_give: ItemType) -> bool {
-    for slot in inventory.items.iter() {
-        if slot.item == to_give {
-            return true;
-        }
-    }
-    for slot in inventory.items.iter() {
-        if slot.item == ItemType::None {
-            return true;
-        }
-    }
-    false
+    inventory
+        .items
+        .iter()
+        .find(|slot| slot.item == ItemType::None || slot.item == to_give)
+        .is_some()
 }
 
 //XXX probably buggy
@@ -108,53 +100,23 @@ fn update_inventory_ui(
 ) {
     let inventory = inventory_query.single();
     for (i, slot) in inventory.items.iter().enumerate() {
-        for (text_count, mut text) in text_query.iter_mut() {
-            if text_count.slot == i {
+        text_query
+            .iter_mut()
+            .filter(|(text, _)| text.slot == i)
+            .for_each(|(_, mut text)| {
                 if slot.count == 0 {
                     text.sections[0].value = "".to_string();
                 } else {
                     text.sections[0].value = format!("{}", slot.count);
                 }
-            }
-        }
+            });
         for (box_ent, children, ui_box) in box_query.iter() {
-            if ui_box.slot == i {
-                if slot.count != 0 {
-                    match children {
-                        //Change the graphic
-                        Some(children) => {
-                            for child in children.iter() {
-                                let mut sprite = box_contents_query
-                                    .get_mut(*child)
-                                    .expect("Nonsprite child of box");
-                                sprite.index = *graphics
-                                    .item_map
-                                    .get(&WorldObject::Item(slot.item))
-                                    .expect("No graphic for item");
-                            }
-                        }
-                        //Create graphic
-                        None => {
-                            let mut sprite = TextureAtlasSprite::new(
-                                *graphics
-                                    .item_map
-                                    .get(&WorldObject::Item(slot.item))
-                                    .expect("No graphic for item"),
-                            );
-                            sprite.custom_size = Some(Vec2::splat(0.10));
-                            let graphic = commands
-                                .spawn_bundle(SpriteSheetBundle {
-                                    sprite: sprite,
-                                    texture_atlas: graphics.texture_atlas.clone(),
-                                    ..Default::default()
-                                })
-                                .insert(Name::new("ItemGraphic"))
-                                .insert(InventoryBoxContents)
-                                .id();
-                            commands.entity(box_ent).add_child(graphic);
-                        }
-                    }
-                } else if let Some(children) = children {
+            if ui_box.slot != i {
+                continue;
+            }
+            if slot.count == 0 {
+                // NOTE: with feature(let_chains) activated we can merge if's with `if let Some`,
+                if let Some(children) = children {
                     //Slot empty despawn children
                     for child in children.iter() {
                         if box_contents_query.get(*child).is_ok() {
@@ -163,7 +125,38 @@ fn update_inventory_ui(
                     }
                     commands.entity(box_ent).remove::<Children>();
                 }
+                continue;
             }
+            if let Some(children) = children {
+                for child in children.iter() {
+                    let mut sprite = box_contents_query
+                        .get_mut(*child)
+                        .expect("Nonsprite child of box");
+                    sprite.index = *graphics
+                        .item_map
+                        .get(&WorldObject::Item(slot.item))
+                        .expect("No graphic for item");
+                }
+                continue;
+            }
+
+            let mut sprite = TextureAtlasSprite::new(
+                *graphics
+                    .item_map
+                    .get(&WorldObject::Item(slot.item))
+                    .expect("No graphic for item"),
+            );
+            sprite.custom_size = Some(Vec2::splat(0.10));
+            let graphic = commands
+                .spawn_bundle(SpriteSheetBundle {
+                    sprite,
+                    texture_atlas: graphics.texture_atlas.clone(),
+                    ..Default::default()
+                })
+                .insert(Name::new("ItemGraphic"))
+                .insert(InventoryBoxContents)
+                .id();
+            commands.entity(box_ent).add_child(graphic);
         }
     }
 }

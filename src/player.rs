@@ -33,36 +33,37 @@ impl PlayerPlugin {
         let (player_transform, player, mut inventory) = player_query.single_mut();
         //Press space to pickup items
         //TODO if held walk to nearest
-        if keyboard.just_pressed(KeyCode::Space) {
-            if let Some((ent, pickup)) = pickupable_query
-                .iter()
-                .filter_map(|(ent, transform, pickup)| {
-                    let distance = transform
-                        .translation
-                        .truncate()
-                        .distance(player_transform.translation.truncate());
-                    if player.arm_length > distance {
-                        Some((ent, distance, pickup))
-                    } else {
-                        None
-                    }
-                })
-                .filter(|(_, _, pickup)| can_pickup(&inventory, pickup.item))
-                .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Greater))
-                .map(|(ent, _, pickup)| (ent, pickup))
-            {
-                give_inventory_item(&mut inventory, pickup.item);
-
-                if let Some(new_object) = pickup.drops {
-                    //Become what you always were meant to be
-                    commands
-                        .entity(ent)
-                        .remove::<Pickupable>()
-                        .insert(new_object);
+        if !keyboard.just_pressed(KeyCode::Space) {
+            return;
+        }
+        if let Some((ent, pickup)) = pickupable_query
+            .iter()
+            .filter_map(|(ent, transform, pickup)| {
+                let distance = transform
+                    .translation
+                    .truncate()
+                    .distance(player_transform.translation.truncate());
+                if player.arm_length > distance {
+                    Some((ent, distance, pickup))
                 } else {
-                    //Despawn if you become nothing
-                    commands.entity(ent).despawn_recursive();
+                    None
                 }
+            })
+            .filter(|(_, _, pickup)| can_pickup(&inventory, pickup.item))
+            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Greater))
+            .map(|(ent, _, pickup)| (ent, pickup))
+        {
+            give_inventory_item(&mut inventory, pickup.item);
+
+            if let Some(new_object) = pickup.drops {
+                //Become what you always were meant to be
+                commands
+                    .entity(ent)
+                    .remove::<Pickupable>()
+                    .insert(new_object);
+            } else {
+                //Despawn if you become nothing
+                commands.entity(ent).despawn_recursive();
             }
         }
     }
@@ -93,7 +94,7 @@ impl PlayerPlugin {
         sprite.custom_size = Some(Vec2::splat(0.3));
         commands
             .spawn_bundle(SpriteSheetBundle {
-                sprite: sprite,
+                sprite,
                 texture_atlas: graphics.texture_atlas.clone(),
                 transform: Transform {
                     translation: Vec3::new(0.0, 0.0, 700.0),
