@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::camera::RenderTarget};
 
 use crate::prelude::GameCamera;
 
@@ -25,8 +25,14 @@ fn mouse_position(
     // assuming there is exactly one main camera entity, so query::single() is OK
     let (camera, camera_transform) = q_camera.single();
 
+    // assuming camera has render target window (instead of Image)
+    let window_id = match camera.target {
+        RenderTarget::Window(win_id) => win_id,
+        _ => panic!("expecting camera to have rendertarget window"),
+    };
+
     // get the window that the camera is displaying to
-    let wnd = wnds.get(camera.window).unwrap();
+    let wnd = wnds.get(window_id).unwrap();
 
     // check if the cursor is inside the window and get its position
     if let Some(screen_pos) = wnd.cursor_position() {

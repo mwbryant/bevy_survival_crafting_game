@@ -1,11 +1,12 @@
 #![allow(clippy::redundant_field_names)]
 #![allow(clippy::expect_fun_call)]
 #![allow(clippy::type_complexity)]
-use bevy::prelude::*;
+use bevy::{prelude::*, window::PresentMode};
 use bevy_inspector_egui::WorldInspectorPlugin;
 
 mod assets;
 mod crafting;
+mod error;
 mod game_camera;
 mod inventory;
 mod item;
@@ -13,7 +14,7 @@ mod mouse;
 mod player;
 mod prelude;
 
-use mouse::{MousePlugin, MousePosition};
+use mouse::MousePlugin;
 // todo implement `PluginGroup`
 use prelude::{
     CraftingPlugin, GameAssetsPlugin, GameCameraPlugin, InventoryPlugin, ItemsPlugin, PlayerPlugin,
@@ -26,7 +27,7 @@ fn main() {
             width: 1600.0,
             height: 900.0,
             title: "DST clone".to_string(),
-            vsync: true,
+            present_mode: PresentMode::Immediate,
             resizable: false,
             ..Default::default()
         })
