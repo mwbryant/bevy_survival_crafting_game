@@ -3,14 +3,15 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::{
     item::{ItemAndCount, WorldObject},
-    prelude::{GameCamera, ItemType, PlaceHolderGraphics, RESOLUTION},
+    prelude::{GameCamera, GameError, GameErrorType, ItemType, PlaceHolderGraphics, RESOLUTION},
 };
 
 pub const INVENTORY_SIZE: usize = 5;
+pub const INVENTORY_ITEM_SIZE: usize = 5;
 
 pub struct InventoryPlugin;
 
-#[derive(Component, Default, Inspectable)]
+#[derive(Component, Default, Inspectable, Clone)]
 pub struct Inventory {
     pub items: [ItemAndCount; INVENTORY_SIZE],
 }
@@ -28,66 +29,149 @@ pub struct InventoryBox {
 #[derive(Component)]
 pub struct InventoryBoxContents;
 
+pub struct InventoryOverflow(pub usize);
+
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(update_inventory_ui)
             .add_startup_system(spawn_inventory_ui)
-            .add_system(inventory_consistency_forcer)
             .register_inspectable::<Inventory>();
     }
 }
 
-//XXX does this silently hide bugs or does it fix bugs....
-fn inventory_consistency_forcer(mut inventory_query: Query<&mut Inventory>) {
-    let mut inventory = inventory_query.single_mut();
-    for mut slot in inventory.items.iter_mut() {
-        if slot.count == 0 {
-            slot.item = ItemType::None;
-        }
-        //if slot.item == ItemType::None {
-        //slot.count = 0;
-        //}
-    }
-}
+impl Inventory {
+    pub fn add(&mut self, item_and_count: &ItemAndCount) -> Option<InventoryOverflow> {
+        let mut remaining_amount = item_and_count.count;
 
-//TODO result in future if doesn't have item
-pub fn take_inventory_item(inventory: &mut Inventory, to_take: ItemType, amount: usize) -> bool {
-    for mut slot in inventory.items.iter_mut() {
-        if slot.item == to_take {
-            if slot.count < amount {
-                return false;
+        for item in self
+            .items
+            .iter_mut()
+            .filter(|item| item.item != ItemType::None)
+        {
+            if item.item == item_and_count.item {
+                let addable_item_count =
+                    std::cmp::min(remaining_amount, INVENTORY_ITEM_SIZE - item_and_count.count);
+                item.count += addable_item_count;
+                remaining_amount -= addable_item_count;
+                if remaining_amount == 0 {
+                    return None;
+                }
             }
-            slot.count -= amount;
+        }
+
+        for item in self
+            .items
+            .iter_mut()
+            .filter(|item| item.item == ItemType::None)
+        {
+            item.item = item_and_count.item;
+            let addable_item_count =
+                std::cmp::min(remaining_amount, INVENTORY_ITEM_SIZE - item_and_count.count);
+            item.count = addable_item_count;
+            remaining_amount -= item.count;
+            if remaining_amount == 0 {
+                return None;
+            }
+        }
+        Some(InventoryOverflow(remaining_amount))
+    }
+
+    pub fn can_add(&mut self, item_and_count: ItemAndCount) -> bool {
+        let mut inventory_clone = self.clone();
+        match inventory_clone.add(&item_and_count) {
+            Some(_) => false,
+            None => true,
         }
     }
-    true
-}
 
-//TODO result in future if inventory full
-pub fn give_inventory_item(inventory: &mut Inventory, to_give: ItemType) -> bool {
-    //Add it if you have it
-    if let Some(slot) = inventory.items.iter_mut().find(|slot| slot.item == to_give) {
-        slot.count += 1;
-        return true;
+    pub fn remove(&mut self, item_and_count: &ItemAndCount) -> Result<(), GameError> {
+        let mut existing = false;
+        for inventory_item in self.items.iter_mut() {
+            if inventory_item.item == item_and_count.item {
+                existing = true;
+                if inventory_item.count > item_and_count.count {
+                    inventory_item.count -= item_and_count.count;
+                    return Ok(());
+                }
+                if inventory_item.count == item_and_count.count {
+                    inventory_item.count = 0;
+                    inventory_item.item = ItemType::None;
+                    return Ok(());
+                }
+            }
+        }
+        if existing {
+            return Err(GameError::new(
+                GameErrorType::ItemMissing,
+                format!("Not enough items in inventory: {:?}", item_and_count.item),
+            ));
+        }
+        Err(GameError::new(
+            GameErrorType::ItemMissing,
+            format!("Item not in inventory: {:?}", item_and_count.item),
+        ))
     }
-    inventory
-        .items
-        .iter_mut()
-        .find(|slot| slot.item == ItemType::None)
-        .map(|slot| {
-            slot.item = to_give;
-            slot.count = 1;
-        })
-        .is_some()
+
+    pub fn can_remove(&mut self, item_and_count: &ItemAndCount) -> bool {
+        let mut inventory_clone = self.clone();
+        match inventory_clone.remove(item_and_count) {
+            Ok(()) => true,
+            _ => false,
+        }
+    }
 }
 
-pub fn can_pickup(inventory: &Inventory, to_give: ItemType) -> bool {
-    inventory
-        .items
-        .iter()
-        .find(|slot| slot.item == ItemType::None || slot.item == to_give)
-        .is_some()
-}
+// //XXX does this silently hide bugs or does it fix bugs....
+// fn inventory_consistency_forcer(mut inventory_query: Query<&mut Inventory>) {
+//     let mut inventory = inventory_query.single_mut();
+//     for mut slot in inventory.items.iter_mut() {
+//         if slot.count == 0 {
+//             slot.item = ItemType::None;
+//         }
+//         //if slot.item == ItemType::None {
+//         //slot.count = 0;
+//         //}
+//     }
+// }
+
+// //TODO result in future if doesn't have item
+// pub fn take_inventory_item(inventory: &mut Inventory, to_take: ItemType, amount: usize) -> bool {
+//     for mut slot in inventory.items.iter_mut() {
+//         if slot.item == to_take {
+//             if slot.count < amount {
+//                 return false;
+//             }
+//             slot.count -= amount;
+//         }
+//     }
+//     true
+// }
+
+// //TODO result in future if inventory full
+// pub fn give_inventory_item(inventory: &mut Inventory, to_give: ItemType) -> bool {
+//     //Add it if you have it
+//     if let Some(slot) = inventory.items.iter_mut().find(|slot| slot.item == to_give) {
+//         slot.count += 1;
+//         return true;
+//     }
+//     inventory
+//         .items
+//         .iter_mut()
+//         .find(|slot| slot.item == ItemType::None)
+//         .map(|slot| {
+//             slot.item = to_give;
+//             slot.count = 1;
+//         })
+//         .is_some()
+// }
+
+// pub fn can_pickup(inventory: &Inventory, to_give: ItemType) -> bool {
+//     inventory
+//         .items
+//         .iter()
+//         .find(|slot| slot.item == ItemType::None || slot.item == to_give)
+//         .is_some()
+// }
 
 //XXX probably buggy
 fn update_inventory_ui(

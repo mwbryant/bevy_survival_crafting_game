@@ -3,8 +3,8 @@ use bevy::prelude::*;
 use crate::{
     item::WorldObject,
     prelude::{
-        give_inventory_item, take_inventory_item, GameCamera, Inventory, ItemAndCount, ItemType,
-        MousePosition, PlaceHolderGraphics, RESOLUTION,
+        GameCamera, Inventory, ItemAndCount, ItemType, MousePosition, PlaceHolderGraphics,
+        RESOLUTION,
     },
 };
 
@@ -83,10 +83,8 @@ impl CraftingPlugin {
             }
             //TODO just check if the button is active,
             // button should if can craft
-            if !can_craft(
-                &inventory,
-                &crafting_book.recipes[crafting_box.recipe_index],
-            ) {
+            if !inventory.ingredients_available(&crafting_book.recipes[crafting_box.recipe_index]) {
+                info!("neccessary ingredients for crafting not available");
                 continue;
             }
 
@@ -94,13 +92,21 @@ impl CraftingPlugin {
                 .needed
                 .iter()
                 .for_each(|item_and_count| {
-                    take_inventory_item(&mut inventory, item_and_count.item, item_and_count.count);
+                    if let Err(error) = inventory.remove(item_and_count) {
+                        warn!("{:?}", error);
+                    };
                 });
 
-            give_inventory_item(
-                &mut inventory,
-                crafting_book.recipes[crafting_box.recipe_index].produces,
-            );
+            let product_item = crafting_book.recipes[crafting_box.recipe_index].produces;
+            if let Some(overflow) = inventory.add(&ItemAndCount {
+                item: product_item,
+                count: 1,
+            }) {
+                warn!(
+                    "couldnt add item to inventory: {}x{:?}",
+                    overflow.0, product_item
+                );
+            };
         }
     }
 
@@ -172,6 +178,17 @@ pub struct CraftingBook {
 pub struct CraftingRecipe {
     pub(crate) needed: Vec<ItemAndCount>,
     pub(crate) produces: ItemType,
+}
+
+impl Inventory {
+    pub fn ingredients_available(&mut self, recipe: &CraftingRecipe) -> bool {
+        for ingredient in recipe.needed.clone() {
+            if !self.can_remove(&ingredient) {
+                return false;
+            }
+        }
+        true
+    }
 }
 
 fn can_craft(inventory: &Inventory, recipe: &CraftingRecipe) -> bool {
