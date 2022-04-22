@@ -1,5 +1,5 @@
 use crate::assets;
-pub use assets::{GameAssetsPlugin, PlaceHolderGraphics, RESOLUTION};
+pub use assets::{GameAssetsPlugin, PlaceHolderGraphics, RESOLUTION, PIXEL_SIZE};
 
 use crate::crafting;
 pub use crafting::CraftingPlugin;
@@ -14,7 +14,7 @@ use crate::player;
 pub use player::{Player, PlayerPlugin};
 
 use crate::item;
-pub use item::{ItemAndCount, ItemType, ItemsPlugin, Pickupable};
+pub use item::{ItemAndCount, ItemType, ItemsPlugin, Pickupable, WorldObject};
 
 use crate::mouse;
 pub use mouse::{MousePlugin, MousePosition};

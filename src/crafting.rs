@@ -4,7 +4,7 @@ use crate::{
     item::WorldObject,
     prelude::{
         GameCamera, Inventory, ItemAndCount, ItemType, MousePosition, PlaceHolderGraphics,
-        RESOLUTION,
+        RESOLUTION, PIXEL_SIZE,
     },
 };
 
@@ -123,7 +123,7 @@ impl CraftingPlugin {
         let starting_y = (book.recipes.len() as f32 / 2.0 + 0.5) * spacing;
 
         let mut sprite = TextureAtlasSprite::new(graphics.box_index);
-        sprite.custom_size = Some(Vec2::splat(0.15));
+        sprite.custom_size = Some(Vec2::splat(PIXEL_SIZE * 32.));
 
         //could enumerate book
         let boxes: Vec<Entity> = book
@@ -148,14 +148,13 @@ impl CraftingPlugin {
                     })
                     .insert(Name::new("CraftingBox"))
                     .with_children(|parent| {
-                        let mut sprite = TextureAtlasSprite::new(
-                            *graphics
-                                .item_map
-                                .get(&WorldObject::Item(recipe.produces))
-                                .expect(&format!("No graphic for item {:?}", recipe.produces)),
-                        );
-                        sprite.custom_size = Some(Vec2::splat(CRAFTING_BOX_SIZE));
-                        let graphic = parent
+                        let sprite = graphics
+                            .item_map
+                            .get(&WorldObject::Item(recipe.produces))
+                            .expect(&format!("No graphic for item {:?}", recipe.produces))
+                            .clone();
+
+                        parent
                             .spawn_bundle(SpriteSheetBundle {
                                 sprite,
                                 texture_atlas: graphics.texture_atlas.clone(),
