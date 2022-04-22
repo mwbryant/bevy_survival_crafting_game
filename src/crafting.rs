@@ -11,7 +11,8 @@ pub struct CraftingBox {
     recipe_index: usize,
 }
 
-const CRAFTING_BOX_SIZE: f32 = 0.1;
+//FIXME this has no real connection to the box size
+pub const CRAFTING_BOX_SIZE: f32 = 0.1;
 
 pub struct CraftingBook {
     pub(crate) recipes: Vec<CraftingRecipe>,

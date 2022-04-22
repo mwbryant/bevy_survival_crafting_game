@@ -1,4 +1,4 @@
-use crate::prelude::PIXEL_SIZE;
+use crate::{crafting::CRAFTING_BOX_SIZE, inventory::InventoryBox, prelude::PIXEL_SIZE};
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
@@ -12,6 +12,7 @@ impl Plugin for PlayerPlugin {
         app.add_startup_system(Self::spawn_player)
             .add_system(Self::player_movement)
             .add_system(Self::player_pickup)
+            .add_system(Self::player_equip)
             .register_inspectable::<Hands>()
             .register_inspectable::<Player>();
     }
@@ -29,11 +30,50 @@ pub struct Player {
 }
 
 impl PlayerPlugin {
+    fn player_equip(
+        mut player_query: Query<(&Player, &mut Inventory, &mut Hands)>,
+        inventory_boxes: Query<(&GlobalTransform, &InventoryBox)>,
+        mouse: Res<Input<MouseButton>>,
+        mouse_pos: Res<MousePosition>,
+    ) {
+        let (player, mut inventory, mut hands) = player_query.single_mut();
+        if mouse.just_pressed(MouseButton::Left) {
+            for (transform, inv_box) in inventory_boxes.iter() {
+                //FIXME this uses a magic number, is there a better way
+                if !(mouse_pos.0.x > transform.translation.x - 0.5 * CRAFTING_BOX_SIZE
+                    && mouse_pos.0.x < transform.translation.x + 0.5 * CRAFTING_BOX_SIZE
+                    && mouse_pos.0.y > transform.translation.y - 0.5 * CRAFTING_BOX_SIZE
+                    && mouse_pos.0.y < transform.translation.y + 0.5 * CRAFTING_BOX_SIZE)
+                {
+                    continue;
+                }
+                if let ItemType::Tool(tool) = inventory.items[inv_box.slot].item {
+                    if let Err(error) = inventory.remove(&ItemAndCount {
+                        item: ItemType::Tool(tool),
+                        count: 1,
+                    }) {
+                        warn!("{:?}", error);
+                    };
+                    if let Some(tool) = hands.left {
+                        if let Some(_) = inventory.add(&ItemAndCount {
+                            item: ItemType::Tool(tool),
+                            count: 1,
+                        }) {
+                            //FIXME removing what was in hand might not be able to go back into inventory
+                            warn!("Item was lost! on unequip");
+                        }
+                    }
+                    hands.left = Some(tool);
+                }
+            }
+        }
+    }
+
     //XXX is this better to be 2 systems... its a bit much
     fn player_pickup(
         mut commands: Commands,
         keyboard: Res<Input<KeyCode>>,
-        mut player_query: Query<(&Transform, &Player, &mut Inventory)>,
+        mut player_query: Query<(&Transform, &Player, &mut Inventory, &Hands)>,
         pickupable_query: Query<
             (
                 Entity,
@@ -47,7 +87,7 @@ impl PlayerPlugin {
         >,
         graphics: Res<Graphics>,
     ) {
-        let (player_transform, player, mut inventory) = player_query.single_mut();
+        let (player_transform, player, mut inventory, hands) = player_query.single_mut();
         //Press space to pickup items
         //TODO if held walk to nearest
         if !keyboard.just_pressed(KeyCode::Space) {
@@ -88,16 +128,18 @@ impl PlayerPlugin {
                     count: 1,
                 };
                 if inventory.can_add(harvest_and_count) {
-                    inventory.add(&harvest_and_count);
-                    commands.entity(ent).despawn_recursive();
-                    if let Some(new_object) = harvest.drops {
-                        //Become what you always were meant to be
-                        //println!("Pickupable found its new life as a {:?}", new_object);
-                        new_object.spawn(
-                            &mut commands,
-                            &graphics,
-                            transform.translation.truncate(),
-                        );
+                    if hands.left == harvest.tool_required || harvest.tool_required.is_none() {
+                        inventory.add(&harvest_and_count);
+                        commands.entity(ent).despawn_recursive();
+                        if let Some(new_object) = harvest.drops {
+                            //Become what you always were meant to be
+                            //println!("Pickupable found its new life as a {:?}", new_object);
+                            new_object.spawn(
+                                &mut commands,
+                                &graphics,
+                                transform.translation.truncate(),
+                            );
+                        }
                     }
                 } else {
                     info!("no available slot for item: {}", harvest_and_count);

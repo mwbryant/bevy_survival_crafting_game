@@ -23,7 +23,7 @@ pub struct UiCountText {
 
 #[derive(Component)]
 pub struct InventoryBox {
-    slot: usize,
+    pub slot: usize,
 }
 
 #[derive(Component)]
