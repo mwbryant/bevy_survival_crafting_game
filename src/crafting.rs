@@ -1,14 +1,9 @@
 use bevy::prelude::*;
+use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::{
-    item::WorldObject,
-    prelude::{
-        GameCamera, Inventory, ItemAndCount, ItemType, MousePosition, PlaceHolderGraphics,
-        RESOLUTION, PIXEL_SIZE,
-    },
-};
+use crate::{item::WorldObject, prelude::*};
 
-#[derive(Component)]
+#[derive(Component, Inspectable)]
 pub struct CraftingBox {
     //TODO grey out currently impossible recipes
     active: bool,
@@ -53,7 +48,10 @@ impl Plugin for CraftingPlugin {
             ],
         })
         .add_startup_system(Self::spawn_crafting_ui)
-        .add_system(Self::test_crafting);
+        .add_system(Self::crafting_ui_graying)
+        .add_system(Self::test_crafting)
+        .add_system(Self::crafting_ui_active)
+        .register_inspectable::<CraftingBox>();
     }
 }
 
@@ -107,6 +105,42 @@ impl CraftingPlugin {
                     overflow.0, product_item
                 );
             };
+        }
+    }
+
+    fn crafting_ui_active(
+        mut crafting_ui: Query<&mut CraftingBox>,
+        crafting_book: Res<CraftingBook>,
+        inventory_query: Query<&Inventory, With<Player>>,
+    ) {
+        let inventory = inventory_query.single();
+        for mut ui_box in crafting_ui.iter_mut() {
+            ui_box.active = can_craft(inventory, &crafting_book.recipes[ui_box.recipe_index]);
+        }
+    }
+
+    fn crafting_ui_graying(
+        mut crafting_ui: Query<
+            (&Children, &mut TextureAtlasSprite, &CraftingBox),
+            Changed<CraftingBox>,
+        >,
+        mut box_children: Query<&mut TextureAtlasSprite, Without<CraftingBox>>,
+    ) {
+        for (children, mut sprite, crafting_box) in crafting_ui.iter_mut() {
+            if crafting_box.active {
+                sprite.color = Color::WHITE;
+            } else {
+                sprite.color = Color::GRAY;
+            }
+            for child in children.iter() {
+                if let Ok(mut sprite) = box_children.get_mut(*child) {
+                    if crafting_box.active {
+                        sprite.color = Color::WHITE;
+                    } else {
+                        sprite.color = Color::GRAY;
+                    }
+                }
+            }
         }
     }
 
@@ -191,7 +225,7 @@ impl Inventory {
 }
 
 fn can_craft(inventory: &Inventory, recipe: &CraftingRecipe) -> bool {
-    recipe.needed.iter().any(|item_and_count| {
+    recipe.needed.iter().all(|item_and_count| {
         inventory.items.iter().any(|item_slot| {
             item_slot.item == item_and_count.item && item_slot.count >= item_and_count.count
         })

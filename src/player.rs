@@ -63,11 +63,7 @@ impl PlayerPlugin {
                 if let Some(new_object) = pickup.drops {
                     //Become what you always were meant to be
                     //println!("Pickupable found its new life as a {:?}", new_object);
-                    new_object.spawn(
-                        &mut commands,
-                        &graphics,
-                        transform.translation.truncate(),
-                    );
+                    new_object.spawn(&mut commands, &graphics, transform.translation.truncate());
                 }
             } else {
                 info!("no available slot for item: {}", pickup_and_count);
@@ -99,7 +95,7 @@ impl PlayerPlugin {
     fn spawn_player(mut commands: Commands, graphics: Res<PlaceHolderGraphics>) {
         let mut sprite = TextureAtlasSprite::new(graphics.player_index);
         sprite.custom_size = Some(Vec2::splat(PIXEL_SIZE * 32.0));
-        sprite.anchor = Anchor::Custom(Vec2::new(0.0, 0.5 - 30.0/32.0));
+        sprite.anchor = Anchor::Custom(Vec2::new(0.0, 0.5 - 30.0 / 32.0));
         commands
             .spawn_bundle(SpriteSheetBundle {
                 sprite,

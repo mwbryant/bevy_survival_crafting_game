@@ -3,7 +3,9 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::{
     item::{ItemAndCount, WorldObject},
-    prelude::{GameCamera, GameError, GameErrorType, ItemType, PlaceHolderGraphics, RESOLUTION, PIXEL_SIZE},
+    prelude::{
+        GameCamera, GameError, GameErrorType, ItemType, PlaceHolderGraphics, PIXEL_SIZE, RESOLUTION,
+    },
 };
 
 pub const INVENTORY_SIZE: usize = 5;
@@ -120,58 +122,6 @@ impl Inventory {
         }
     }
 }
-
-// //XXX does this silently hide bugs or does it fix bugs....
-// fn inventory_consistency_forcer(mut inventory_query: Query<&mut Inventory>) {
-//     let mut inventory = inventory_query.single_mut();
-//     for mut slot in inventory.items.iter_mut() {
-//         if slot.count == 0 {
-//             slot.item = ItemType::None;
-//         }
-//         //if slot.item == ItemType::None {
-//         //slot.count = 0;
-//         //}
-//     }
-// }
-
-// //TODO result in future if doesn't have item
-// pub fn take_inventory_item(inventory: &mut Inventory, to_take: ItemType, amount: usize) -> bool {
-//     for mut slot in inventory.items.iter_mut() {
-//         if slot.item == to_take {
-//             if slot.count < amount {
-//                 return false;
-//             }
-//             slot.count -= amount;
-//         }
-//     }
-//     true
-// }
-
-// //TODO result in future if inventory full
-// pub fn give_inventory_item(inventory: &mut Inventory, to_give: ItemType) -> bool {
-//     //Add it if you have it
-//     if let Some(slot) = inventory.items.iter_mut().find(|slot| slot.item == to_give) {
-//         slot.count += 1;
-//         return true;
-//     }
-//     inventory
-//         .items
-//         .iter_mut()
-//         .find(|slot| slot.item == ItemType::None)
-//         .map(|slot| {
-//             slot.item = to_give;
-//             slot.count = 1;
-//         })
-//         .is_some()
-// }
-
-// pub fn can_pickup(inventory: &Inventory, to_give: ItemType) -> bool {
-//     inventory
-//         .items
-//         .iter()
-//         .find(|slot| slot.item == ItemType::None || slot.item == to_give)
-//         .is_some()
-// }
 
 //XXX probably buggy
 fn update_inventory_ui(

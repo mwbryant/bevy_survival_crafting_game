@@ -1,4 +1,4 @@
-use crate::prelude::{PlaceHolderGraphics};
+use crate::prelude::PlaceHolderGraphics;
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use serde::Deserialize;
@@ -29,10 +29,10 @@ impl WorldObject {
         position: Vec2,
     ) -> Entity {
         let sprite = graphics
-        .item_map
-        .get(&self)
-        .expect(&format!("No graphic for object {:?}", self))
-        .clone();
+            .item_map
+            .get(&self)
+            .expect(&format!("No graphic for object {:?}", self))
+            .clone();
 
         let item = commands
             .spawn_bundle(SpriteSheetBundle {
@@ -66,7 +66,7 @@ impl WorldObject {
         commands: &mut Commands,
         graphics: &PlaceHolderGraphics,
         ent: Entity,
-        transform: &Transform
+        transform: &Transform,
     ) -> Entity {
         if let Some(new_object) = self.grows_into() {
             commands.entity(ent).despawn_recursive();
@@ -82,17 +82,29 @@ impl WorldObject {
             WorldObject::DeadSapling => Some(WorldObject::Sapling),
             WorldObject::PluckedGrass => Some(WorldObject::Grass),
             WorldObject::GrowingTree => Some(WorldObject::Tree),
-            _ => None
+            _ => None,
         }
     }
 
     pub fn as_pickup(&self) -> Option<Pickupable> {
         match self {
-            WorldObject::Sapling => Some(Pickupable { item: ItemType::Twig, drops: Some(WorldObject::DeadSapling) }),
-            WorldObject::Grass => Some(Pickupable { item: ItemType::Grass, drops: Some(WorldObject::PluckedGrass) }),
-            WorldObject::Tree => Some(Pickupable { item: ItemType::Wood, drops: Some(WorldObject::Stump) }),
-            WorldObject::Item(item) => Some(Pickupable { item: *item, drops: None }),
-            _ => None
+            WorldObject::Sapling => Some(Pickupable {
+                item: ItemType::Twig,
+                drops: Some(WorldObject::DeadSapling),
+            }),
+            WorldObject::Grass => Some(Pickupable {
+                item: ItemType::Grass,
+                drops: Some(WorldObject::PluckedGrass),
+            }),
+            WorldObject::Tree => Some(Pickupable {
+                item: ItemType::Wood,
+                drops: Some(WorldObject::Stump),
+            }),
+            WorldObject::Item(item) => Some(Pickupable {
+                item: *item,
+                drops: None,
+            }),
+            _ => None,
         }
     }
 }
@@ -164,97 +176,33 @@ impl ItemsPlugin {
         for (mut sprite, world_object) in to_update_query.iter_mut() {
             sprite.clone_from(
                 graphics
-                .item_map
-                .get(world_object)
-                .expect(&format!("No graphic for object {:?}", world_object))
+                    .item_map
+                    .get(world_object)
+                    .expect(&format!("No graphic for object {:?}", world_object)),
             );
         }
     }
 
     fn spawn_test_objects(mut commands: Commands, graphics: Res<PlaceHolderGraphics>) {
-        WorldObject::Sapling.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(-0.6, 0.6),
-        );
-        WorldObject::Sapling.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(-0.6, 0.3),
-        );
-        WorldObject::Sapling.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(-0.3, 0.6),
-        );
-        WorldObject::Sapling.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(-0.3, 0.3),
-        );
+        WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-0.6, 0.6));
+        WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-0.6, 0.3));
+        WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-0.3, 0.6));
+        WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-0.3, 0.3));
 
-        WorldObject::Grass.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.6, -0.6),
-        );
-        WorldObject::Grass.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.6, -0.3),
-        );
-        WorldObject::Grass.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.3, -0.6),
-        );
-        WorldObject::Grass.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.3, -0.3),
-        );
+        WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(0.6, -0.6));
+        WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(0.6, -0.3));
+        WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(0.3, -0.6));
+        WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(0.3, -0.3));
 
-        WorldObject::Tree.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(-0.6, -0.6),
-        );
-        WorldObject::Tree.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(-0.6, -0.3),
-        );
-        WorldObject::Tree.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(-0.3, -0.6),
-        );
-        WorldObject::Tree.spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(-0.3, -0.3),
-        );
+        WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-0.6, -0.6));
+        WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-0.6, -0.3));
+        WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-0.3, -0.6));
+        WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-0.3, -0.3));
 
-        WorldObject::Item(ItemType::Flint).spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.4, 0.4),
-        );
-        WorldObject::Item(ItemType::Flint).spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.4, 0.3),
-        );
-        WorldObject::Item(ItemType::Flint).spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.3, 0.4),
-        );
-        WorldObject::Item(ItemType::Flint).spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.3, 0.3),
-        );
+        WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(0.4, 0.4));
+        WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(0.4, 0.3));
+        WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(0.3, 0.4));
+        WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(0.3, 0.3));
     }
 }
 

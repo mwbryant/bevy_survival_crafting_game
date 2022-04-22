@@ -2,8 +2,8 @@ use std::fs;
 
 use bevy::prelude::*;
 use bevy::reflect::erased_serde::private::serde::Deserialize;
-use bevy::utils::HashMap;
 use bevy::sprite::Anchor;
+use bevy::utils::HashMap;
 
 use crate::item::WorldObject;
 use ron::de::from_str;
@@ -19,20 +19,21 @@ pub struct MyRect {
 
 impl MyRect {
     pub fn new(pos: (f32, f32), size: (f32, f32)) -> Self {
-        Self { pos, size, anchor: None}
+        Self {
+            pos,
+            size,
+            anchor: None,
+        }
     }
 
     pub fn to_atlas_rect(self) -> bevy::sprite::Rect {
         bevy::sprite::Rect {
             //A tiny amount is clipped off the sides of the rectangle
             //to stop contents of other sprites from bleeding through
-            min: Vec2::new(
-                self.pos.0 + 0.15,
-                self.pos.1 + 0.15
-            ),
+            min: Vec2::new(self.pos.0 + 0.15, self.pos.1 + 0.15),
             max: Vec2::new(
                 self.pos.0 + self.size.0 - 0.15,
-                self.pos.1 + self.size.1 - 0.15
+                self.pos.1 + self.size.1 - 0.15,
             ),
         }
     }
