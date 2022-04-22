@@ -57,7 +57,7 @@ pub const RESOLUTION: f32 = 16.0 / 9.0;
 //Three pixels divided by half of the screen height
 pub const PIXEL_SIZE: f32 = 3. / 450.;
 
-pub struct PlaceHolderGraphics {
+pub struct Graphics {
     pub texture_atlas: Handle<TextureAtlas>,
     pub player_index: usize,
     pub box_index: usize,
@@ -108,7 +108,7 @@ impl GameAssetsPlugin {
 
         let atlas_handle = texture_assets.add(atlas);
 
-        commands.insert_resource(PlaceHolderGraphics {
+        commands.insert_resource(Graphics {
             texture_atlas: atlas_handle,
             player_index,
             box_index,

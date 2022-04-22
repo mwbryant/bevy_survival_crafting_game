@@ -13,6 +13,16 @@ pub struct CraftingBox {
 
 const CRAFTING_BOX_SIZE: f32 = 0.1;
 
+pub struct CraftingBook {
+    pub(crate) recipes: Vec<CraftingRecipe>,
+}
+
+#[derive(Clone)]
+pub struct CraftingRecipe {
+    pub(crate) needed: Vec<ItemAndCount>,
+    pub(crate) produces: ItemType,
+}
+
 pub struct CraftingPlugin;
 
 impl Plugin for CraftingPlugin {
@@ -30,7 +40,7 @@ impl Plugin for CraftingPlugin {
                             count: 1,
                         },
                     ],
-                    produces: ItemType::Axe,
+                    produces: ItemType::Tool(Tool::Axe),
                 },
                 CraftingRecipe {
                     needed: vec![
@@ -146,7 +156,7 @@ impl CraftingPlugin {
 
     fn spawn_crafting_ui(
         mut commands: Commands,
-        graphics: Res<PlaceHolderGraphics>,
+        graphics: Res<Graphics>,
         camera_query: Query<Entity, With<GameCamera>>,
         book: Res<CraftingBook>,
     ) {
@@ -202,17 +212,6 @@ impl CraftingPlugin {
         commands.entity(camera_ent).push_children(&boxes);
     }
 }
-
-pub struct CraftingBook {
-    pub(crate) recipes: Vec<CraftingRecipe>,
-}
-
-#[derive(Clone)]
-pub struct CraftingRecipe {
-    pub(crate) needed: Vec<ItemAndCount>,
-    pub(crate) produces: ItemType,
-}
-
 impl Inventory {
     pub fn ingredients_available(&mut self, recipe: &CraftingRecipe) -> bool {
         for ingredient in recipe.needed.clone() {

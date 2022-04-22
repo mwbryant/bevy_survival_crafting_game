@@ -3,9 +3,7 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::{
     item::{ItemAndCount, WorldObject},
-    prelude::{
-        GameCamera, GameError, GameErrorType, ItemType, PlaceHolderGraphics, PIXEL_SIZE, RESOLUTION,
-    },
+    prelude::{GameCamera, GameError, GameErrorType, Graphics, ItemType, PIXEL_SIZE, RESOLUTION},
 };
 
 pub const INVENTORY_SIZE: usize = 5;
@@ -121,7 +119,7 @@ impl Inventory {
 fn update_inventory_ui(
     mut commands: Commands,
     inventory_query: Query<&Inventory>,
-    graphics: Res<PlaceHolderGraphics>,
+    graphics: Res<Graphics>,
     box_query: Query<(Entity, Option<&Children>, &InventoryBox)>,
     mut box_contents_query: Query<&mut TextureAtlasSprite, With<InventoryBoxContents>>,
     mut text_query: Query<(&UiCountText, &mut Text)>,
@@ -192,7 +190,7 @@ fn update_inventory_ui(
 
 fn spawn_inventory_ui(
     mut commands: Commands,
-    graphics: Res<PlaceHolderGraphics>,
+    graphics: Res<Graphics>,
     camera_query: Query<Entity, With<GameCamera>>,
     assets: Res<AssetServer>,
 ) {

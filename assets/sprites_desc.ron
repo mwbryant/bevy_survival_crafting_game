@@ -26,7 +26,7 @@
             size: (16., 16.),
             anchor: None,
         ),
-        Item(Axe): MyRect(
+        Item(Tool(Axe)): MyRect(
             pos: (32., 64.),
             size: (16., 16.),
             anchor: None,
