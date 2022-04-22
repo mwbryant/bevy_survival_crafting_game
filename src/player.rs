@@ -1,4 +1,6 @@
+use crate::prelude::PIXEL_SIZE;
 use bevy::prelude::*;
+use bevy::sprite::Anchor;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::prelude::{Inventory, ItemAndCount, Pickupable, PlaceHolderGraphics};
@@ -26,6 +28,7 @@ impl PlayerPlugin {
         keyboard: Res<Input<KeyCode>>,
         mut player_query: Query<(&Transform, &Player, &mut Inventory)>,
         pickupable_query: Query<(Entity, &Transform, &Pickupable), Without<Player>>,
+        graphics: Res<PlaceHolderGraphics>,
     ) {
         let (player_transform, player, mut inventory) = player_query.single_mut();
         //Press space to pickup items
@@ -33,7 +36,7 @@ impl PlayerPlugin {
         if !keyboard.just_pressed(KeyCode::Space) {
             return;
         }
-        if let Some((ent, pickup)) = pickupable_query
+        if let Some((ent, transform, pickup)) = pickupable_query
             .iter()
             .filter_map(|(ent, transform, pickup)| {
                 let distance = transform
@@ -41,14 +44,14 @@ impl PlayerPlugin {
                     .truncate()
                     .distance(player_transform.translation.truncate());
                 if player.arm_length > distance {
-                    Some((ent, distance, pickup))
+                    Some((ent, transform, distance, pickup))
                 } else {
                     None
                 }
             })
             //.filter(|(_, _, pickup)| can_pickup(&inventory, pickup.item))
-            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Greater))
-            .map(|(ent, _, pickup)| (ent, pickup))
+            .min_by(|a, b| a.2.partial_cmp(&b.2).unwrap_or(std::cmp::Ordering::Greater))
+            .map(|(ent, transform, _, pickup)| (ent, transform, pickup))
         {
             let pickup_and_count = ItemAndCount {
                 item: pickup.item,
@@ -56,15 +59,15 @@ impl PlayerPlugin {
             };
             if inventory.can_add(pickup_and_count) {
                 inventory.add(&pickup_and_count);
+                commands.entity(ent).despawn_recursive();
                 if let Some(new_object) = pickup.drops {
                     //Become what you always were meant to be
-                    commands
-                        .entity(ent)
-                        .remove::<Pickupable>()
-                        .insert(new_object);
-                } else {
-                    //Despawn if you become nothing
-                    commands.entity(ent).despawn_recursive();
+                    //println!("Pickupable found its new life as a {:?}", new_object);
+                    new_object.spawn(
+                        &mut commands,
+                        &graphics,
+                        transform.translation.truncate(),
+                    );
                 }
             } else {
                 info!("no available slot for item: {}", pickup_and_count);
@@ -95,7 +98,8 @@ impl PlayerPlugin {
 
     fn spawn_player(mut commands: Commands, graphics: Res<PlaceHolderGraphics>) {
         let mut sprite = TextureAtlasSprite::new(graphics.player_index);
-        sprite.custom_size = Some(Vec2::splat(0.3));
+        sprite.custom_size = Some(Vec2::splat(PIXEL_SIZE * 32.0));
+        sprite.anchor = Anchor::Custom(Vec2::new(0.0, 0.5 - 30.0/32.0));
         commands
             .spawn_bundle(SpriteSheetBundle {
                 sprite,

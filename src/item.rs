@@ -1,4 +1,4 @@
-use crate::prelude::PlaceHolderGraphics;
+use crate::prelude::{PlaceHolderGraphics};
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use serde::Deserialize;
@@ -16,6 +16,91 @@ pub enum WorldObject {
     Stump,
     Sapling,
     DeadSapling,
+    Grass,
+    PluckedGrass,
+    GrowingTree,
+}
+
+impl WorldObject {
+    pub fn spawn(
+        self,
+        commands: &mut Commands,
+        graphics: &PlaceHolderGraphics,
+        position: Vec2,
+    ) -> Entity {
+        let sprite = graphics
+        .item_map
+        .get(&self)
+        .expect(&format!("No graphic for object {:?}", self))
+        .clone();
+
+        let item = commands
+            .spawn_bundle(SpriteSheetBundle {
+                sprite,
+                texture_atlas: graphics.texture_atlas.clone(),
+                transform: Transform {
+                    translation: position.extend(0.0),
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .insert(Name::new("GroundItem"))
+            .insert(self)
+            .id();
+
+        if let Some(pickup) = self.as_pickup() {
+            commands.entity(item).insert(pickup);
+        }
+
+        if self.grows_into().is_some() {
+            commands.entity(item).insert(GrowthTimer {
+                timer: Timer::from_seconds(3.0, false),
+            });
+        }
+
+        item
+    }
+
+    pub fn grow(
+        self,
+        commands: &mut Commands,
+        graphics: &PlaceHolderGraphics,
+        ent: Entity,
+        transform: &Transform
+    ) -> Entity {
+        if let Some(new_object) = self.grows_into() {
+            commands.entity(ent).despawn_recursive();
+            new_object.spawn(commands, graphics, transform.translation.truncate())
+            //println!("{:?} grew into a beautiful {:?}", self, self.grows_into());
+        } else {
+            ent
+        }
+    }
+
+    pub fn grows_into(&self) -> Option<WorldObject> {
+        match self {
+            WorldObject::DeadSapling => Some(WorldObject::Sapling),
+            WorldObject::PluckedGrass => Some(WorldObject::Grass),
+            WorldObject::GrowingTree => Some(WorldObject::Tree),
+            _ => None
+        }
+    }
+
+    pub fn as_pickup(&self) -> Option<Pickupable> {
+        match self {
+            WorldObject::Sapling => Some(Pickupable { item: ItemType::Twig, drops: Some(WorldObject::DeadSapling) }),
+            WorldObject::Grass => Some(Pickupable { item: ItemType::Grass, drops: Some(WorldObject::PluckedGrass) }),
+            WorldObject::Tree => Some(Pickupable { item: ItemType::Wood, drops: Some(WorldObject::Stump) }),
+            WorldObject::Item(item) => Some(Pickupable { item: *item, drops: None }),
+            _ => None
+        }
+    }
+}
+
+impl Default for WorldObject {
+    fn default() -> Self {
+        WorldObject::Item(ItemType::None)
+    }
 }
 
 #[derive(Inspectable, Debug, PartialEq, Eq, Clone, Copy, Hash, Deserialize)]
@@ -34,13 +119,12 @@ pub struct ItemsPlugin;
 
 impl Plugin for ItemsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(Self::spawn_flint)
-            .add_startup_system(Self::spawn_sapling)
+        app.add_startup_system(Self::spawn_test_objects)
             .add_system(Self::update_graphics)
-            .add_system(Self::sapling_regrowth);
+            .add_system(Self::world_object_growth);
         //FIXME I don't think this is working...
         if cfg!(debug_assertions) {
-            app.register_type::<RegrowthTimer>()
+            app.register_type::<GrowthTimer>()
                 .register_inspectable::<WorldObject>()
                 .register_inspectable::<ItemAndCount>()
                 .register_inspectable::<Pickupable>();
@@ -50,38 +134,25 @@ impl Plugin for ItemsPlugin {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-pub struct RegrowthTimer {
+pub struct GrowthTimer {
     timer: Timer,
 }
 
 impl ItemsPlugin {
-    //XXX is it ok to be adding/removing components (for performance i guess) or should anything that can regrow already have the timer
-    fn sapling_regrowth(
+    fn world_object_growth(
         mut commands: Commands,
-        mut sapling_query: Query<(Entity, &mut WorldObject, Option<&mut RegrowthTimer>)>,
         time: Res<Time>,
+        graphics: Res<PlaceHolderGraphics>,
+        mut growable_query: Query<(Entity, &Transform, &WorldObject, Option<&mut GrowthTimer>)>,
     ) {
-        for (ent, mut sapling, timer) in sapling_query.iter_mut() {
-            if *sapling != WorldObject::DeadSapling {
-                continue;
-            }
-            if let Some(mut timer) = timer {
+        for (ent, transform, world_object, regrowth_timer) in growable_query.iter_mut() {
+            if let Some(mut timer) = regrowth_timer {
                 timer.timer.tick(time.delta());
                 if !timer.timer.finished() {
                     continue;
                 }
-                commands.entity(ent).remove::<RegrowthTimer>();
-                *sapling = WorldObject::Sapling;
-                //FIXME dont re add pickupable, track if can be picked up?
-                //Idk how this work for renewables
-                commands.entity(ent).insert(Pickupable {
-                    item: ItemType::Twig,
-                    drops: Some(WorldObject::DeadSapling),
-                });
-            } else {
-                commands.entity(ent).insert(RegrowthTimer {
-                    timer: Timer::from_seconds(1.0, false),
-                });
+
+                world_object.grow(&mut commands, &graphics, ent, transform);
             }
         }
     }
@@ -91,47 +162,97 @@ impl ItemsPlugin {
         graphics: Res<PlaceHolderGraphics>,
     ) {
         for (mut sprite, world_object) in to_update_query.iter_mut() {
-            sprite.index = *graphics
+            sprite.clone_from(
+                graphics
                 .item_map
                 .get(world_object)
-                .expect(&format!("No graphic for object {:?}", world_object));
+                .expect(&format!("No graphic for object {:?}", world_object))
+            );
         }
     }
 
-    fn spawn_sapling(mut commands: Commands, graphics: Res<PlaceHolderGraphics>) {
-        spawn_world_object(
+    fn spawn_test_objects(mut commands: Commands, graphics: Res<PlaceHolderGraphics>) {
+        WorldObject::Sapling.spawn(
             &mut commands,
             &graphics,
-            WorldObject::Sapling,
-            Some(ItemType::Twig),
-            Some(WorldObject::DeadSapling),
+            Vec2::new(-0.6, 0.6),
+        );
+        WorldObject::Sapling.spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(-0.6, 0.3),
+        );
+        WorldObject::Sapling.spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(-0.3, 0.6),
+        );
+        WorldObject::Sapling.spawn(
+            &mut commands,
+            &graphics,
             Vec2::new(-0.3, 0.3),
         );
-    }
 
-    fn spawn_flint(mut commands: Commands, graphics: Res<PlaceHolderGraphics>) {
-        spawn_world_object(
+        WorldObject::Grass.spawn(
             &mut commands,
             &graphics,
-            WorldObject::Item(ItemType::Flint),
-            Some(ItemType::Flint),
-            None,
-            Vec2::new(0.40, 0.3),
+            Vec2::new(0.6, -0.6),
         );
-        spawn_world_object(
+        WorldObject::Grass.spawn(
             &mut commands,
             &graphics,
-            WorldObject::Item(ItemType::Flint),
-            Some(ItemType::Flint),
-            None,
-            Vec2::new(0.3, 0.40),
+            Vec2::new(0.6, -0.3),
         );
-        spawn_world_object(
+        WorldObject::Grass.spawn(
             &mut commands,
             &graphics,
-            WorldObject::Item(ItemType::Flint),
-            Some(ItemType::Flint),
-            None,
+            Vec2::new(0.3, -0.6),
+        );
+        WorldObject::Grass.spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(0.3, -0.3),
+        );
+
+        WorldObject::Tree.spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(-0.6, -0.6),
+        );
+        WorldObject::Tree.spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(-0.6, -0.3),
+        );
+        WorldObject::Tree.spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(-0.3, -0.6),
+        );
+        WorldObject::Tree.spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(-0.3, -0.3),
+        );
+
+        WorldObject::Item(ItemType::Flint).spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(0.4, 0.4),
+        );
+        WorldObject::Item(ItemType::Flint).spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(0.4, 0.3),
+        );
+        WorldObject::Item(ItemType::Flint).spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(0.3, 0.4),
+        );
+        WorldObject::Item(ItemType::Flint).spawn(
+            &mut commands,
+            &graphics,
             Vec2::new(0.3, 0.3),
         );
     }
@@ -153,42 +274,4 @@ impl std::fmt::Display for ItemAndCount {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}x {:?}", self.count, self.item)
     }
-}
-
-fn spawn_world_object(
-    commands: &mut Commands,
-    graphics: &PlaceHolderGraphics,
-    object_type: WorldObject,
-    pickup: Option<ItemType>,
-    drops: Option<WorldObject>,
-    position: Vec2,
-) -> Entity {
-    let mut sprite = TextureAtlasSprite::new(
-        *graphics
-            .item_map
-            .get(&object_type)
-            .expect(&format!("No graphic for object {:?}", object_type)),
-    );
-    sprite.custom_size = Some(Vec2::splat(0.1));
-    let item = commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite,
-            texture_atlas: graphics.texture_atlas.clone(),
-            transform: Transform {
-                translation: position.extend(0.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        })
-        .insert(Name::new("GroundItem"))
-        .insert(object_type)
-        .id();
-
-    if let Some(pickup) = pickup {
-        commands.entity(item).insert(Pickupable {
-            item: pickup,
-            drops,
-        });
-    }
-    item
 }

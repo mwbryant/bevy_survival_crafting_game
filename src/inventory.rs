@@ -3,7 +3,7 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::{
     item::{ItemAndCount, WorldObject},
-    prelude::{GameCamera, GameError, GameErrorType, ItemType, PlaceHolderGraphics, RESOLUTION},
+    prelude::{GameCamera, GameError, GameErrorType, ItemType, PlaceHolderGraphics, RESOLUTION, PIXEL_SIZE},
 };
 
 pub const INVENTORY_SIZE: usize = 5;
@@ -216,21 +216,22 @@ fn update_inventory_ui(
                     let mut sprite = box_contents_query
                         .get_mut(*child)
                         .expect("Nonsprite child of box");
-                    sprite.index = *graphics
+                    sprite.index = graphics
                         .item_map
                         .get(&WorldObject::Item(slot.item))
-                        .expect("No graphic for item");
+                        .expect("No graphic for item")
+                        .index;
                 }
                 continue;
             }
 
-            let mut sprite = TextureAtlasSprite::new(
-                *graphics
-                    .item_map
-                    .get(&WorldObject::Item(slot.item))
-                    .expect("No graphic for item"),
-            );
-            sprite.custom_size = Some(Vec2::splat(0.10));
+            let sprite = graphics
+                .item_map
+                .get(&WorldObject::Item(slot.item))
+                .expect("No graphic for item")
+                .clone();
+
+            //sprite.custom_size = Some(Vec2::splat(PIXEL_SIZE * 16.));
             let graphic = commands
                 .spawn_bundle(SpriteSheetBundle {
                     sprite,
@@ -263,7 +264,7 @@ fn spawn_inventory_ui(
     let starting_percent = (0.5 + starting_x / 2.0 / RESOLUTION) * 100.0 + 0.9;
 
     let mut sprite = TextureAtlasSprite::new(graphics.box_index);
-    sprite.custom_size = Some(Vec2::splat(0.15));
+    sprite.custom_size = Some(Vec2::splat(PIXEL_SIZE * 32.));
 
     for i in 0..INVENTORY_SIZE {
         ui_texts.push(
@@ -286,7 +287,7 @@ fn spawn_inventory_ui(
                             //Or is the assetserver smart enough to not reload?
                             font: assets.load("QuattrocentoSans-Regular.ttf"),
                             font_size: 22.0,
-                            color: Color::BLACK,
+                            color: Color::WHITE,
                         },
                         TextAlignment {
                             horizontal: HorizontalAlign::Right,

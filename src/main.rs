@@ -22,12 +22,12 @@ use prelude::{
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::rgb(0.3, 0.5, 0.3)))
+        .insert_resource(ClearColor(Color::hex("b0c060").unwrap()))
         .insert_resource(WindowDescriptor {
             width: 1600.0,
             height: 900.0,
             title: "DST clone".to_string(),
-            present_mode: PresentMode::Immediate,
+            present_mode: PresentMode::Fifo,
             resizable: false,
             ..Default::default()
         })
