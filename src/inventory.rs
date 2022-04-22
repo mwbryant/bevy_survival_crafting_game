@@ -80,10 +80,7 @@ impl Inventory {
 
     pub fn can_add(&mut self, item_and_count: ItemAndCount) -> bool {
         let mut inventory_clone = self.clone();
-        match inventory_clone.add(&item_and_count) {
-            Some(_) => false,
-            None => true,
-        }
+        inventory_clone.add(&item_and_count).is_none()
     }
 
     pub fn remove(&mut self, item_and_count: &ItemAndCount) -> Result<(), GameError> {
@@ -116,10 +113,7 @@ impl Inventory {
 
     pub fn can_remove(&mut self, item_and_count: &ItemAndCount) -> bool {
         let mut inventory_clone = self.clone();
-        match inventory_clone.remove(item_and_count) {
-            Ok(()) => true,
-            _ => false,
-        }
+        matches!(inventory_clone.remove(item_and_count), Ok(()))
     }
 }
 
