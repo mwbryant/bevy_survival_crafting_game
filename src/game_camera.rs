@@ -13,7 +13,11 @@ impl Plugin for GameCameraPlugin {
             StartupStage::PreStartup,
             Self::spawn_camera.label("camera"),
         )
-        .add_system(Self::camera_follow);
+        .add_system_to_stage(
+            //The camera should update after all other game systems to enforce determinism and prevent jittering
+            CoreStage::PostUpdate,
+            Self::camera_follow
+        );
     }
 }
 
