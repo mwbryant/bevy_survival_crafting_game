@@ -36,7 +36,7 @@ impl PlayerPlugin {
         mouse: Res<Input<MouseButton>>,
         mouse_pos: Res<MousePosition>,
     ) {
-        let (player, mut inventory, mut hands) = player_query.single_mut();
+        let (_, mut inventory, mut hands) = player_query.single_mut();
         if mouse.just_pressed(MouseButton::Left) {
             for (transform, inv_box) in inventory_boxes.iter() {
                 //FIXME this uses a magic number, is there a better way
@@ -55,10 +55,10 @@ impl PlayerPlugin {
                         warn!("{:?}", error);
                     };
                     if let Some(tool) = hands.left {
-                        if let Some(_) = inventory.add(&ItemAndCount {
+                        if inventory.add(&ItemAndCount {
                             item: ItemType::Tool(tool),
                             count: 1,
-                        }) {
+                        }).is_some() {
                             //FIXME removing what was in hand might not be able to go back into inventory
                             warn!("Item was lost! on unequip");
                         }
