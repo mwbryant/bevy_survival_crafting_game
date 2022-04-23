@@ -1,4 +1,4 @@
-use crate::{crafting::CRAFTING_BOX_SIZE, inventory::InventoryBox, prelude::PIXEL_SIZE};
+use crate::inventory::InventoryBox;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
@@ -39,11 +39,11 @@ impl PlayerPlugin {
         let (_, mut inventory, mut hands) = player_query.single_mut();
         if mouse.just_pressed(MouseButton::Left) {
             for (transform, inv_box) in inventory_boxes.iter() {
-                //FIXME this uses a magic number, is there a better way
-                if !(mouse_pos.0.x > transform.translation.x - 0.5 * CRAFTING_BOX_SIZE
-                    && mouse_pos.0.x < transform.translation.x + 0.5 * CRAFTING_BOX_SIZE
-                    && mouse_pos.0.y > transform.translation.y - 0.5 * CRAFTING_BOX_SIZE
-                    && mouse_pos.0.y < transform.translation.y + 0.5 * CRAFTING_BOX_SIZE)
+                // 80% of the dimensions of the box, that's 0.4 in either direction
+                if !(mouse_pos.0.x > transform.translation.x - 0.4
+                    && mouse_pos.0.x < transform.translation.x + 0.4
+                    && mouse_pos.0.y > transform.translation.y - 0.4
+                    && mouse_pos.0.y < transform.translation.y + 0.4)
                 {
                     continue;
                 }
@@ -171,7 +171,7 @@ impl PlayerPlugin {
 
     fn spawn_player(mut commands: Commands, graphics: Res<Graphics>) {
         let mut sprite = TextureAtlasSprite::new(graphics.player_index);
-        sprite.custom_size = Some(Vec2::splat(PIXEL_SIZE * 32.0));
+        sprite.custom_size = Some(Vec2::splat(1.));
         sprite.anchor = Anchor::Custom(Vec2::new(0.0, 0.5 - 30.0 / 32.0));
         commands
             .spawn_bundle(SpriteSheetBundle {
@@ -184,8 +184,8 @@ impl PlayerPlugin {
                 ..Default::default()
             })
             .insert(Player {
-                speed: 0.3,
-                arm_length: 0.1,
+                speed: 3.0,
+                arm_length: 1.0,
             })
             .insert(Inventory::default())
             .insert(Hands::default())

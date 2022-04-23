@@ -211,41 +211,25 @@ impl ItemsPlugin {
     #[allow(clippy::vec_init_then_push)]
     fn spawn_test_objects(mut commands: Commands, graphics: Res<Graphics>) {
         let mut children = Vec::new();
-        children.push(WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-0.6, 0.6)));
-        children.push(WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-0.6, 0.3)));
-        children.push(WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-0.3, 0.6)));
-        children.push(WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-0.3, 0.3)));
+        children.push(WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-3., 3.)));
+        children.push(WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-3., 1.)));
+        children.push(WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-1., 3.)));
+        children.push(WorldObject::Sapling.spawn(&mut commands, &graphics, Vec2::new(-1., 1.)));
 
-        children.push(WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(0.6, -0.6)));
-        children.push(WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(0.6, -0.3)));
-        children.push(WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(0.3, -0.6)));
-        children.push(WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(0.3, -0.3)));
+        children.push(WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(3., -3.)));
+        children.push(WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(3., -1.)));
+        children.push(WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(1., -3.)));
+        children.push(WorldObject::Grass.spawn(&mut commands, &graphics, Vec2::new(1., -1.)));
 
-        children.push(WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-0.6, -0.6)));
-        children.push(WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-0.6, -0.3)));
-        children.push(WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-0.3, -0.6)));
-        children.push(WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-0.3, -0.3)));
+        children.push(WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-3., -3.)));
+        children.push(WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-3., -1.)));
+        children.push(WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-1., -3.)));
+        children.push(WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-1., -1.)));
 
-        children.push(WorldObject::Item(ItemType::Flint).spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.4, 0.4),
-        ));
-        children.push(WorldObject::Item(ItemType::Flint).spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.4, 0.3),
-        ));
-        children.push(WorldObject::Item(ItemType::Flint).spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.3, 0.4),
-        ));
-        children.push(WorldObject::Item(ItemType::Flint).spawn(
-            &mut commands,
-            &graphics,
-            Vec2::new(0.3, 0.3),
-        ));
+        children.push(WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(3., 3.)));
+        children.push(WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(3., 1.)));
+        children.push(WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(1., 3.)));
+        children.push(WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(1., 1.)));
         commands
             .spawn_bundle(TransformBundle::default())
             .insert(Name::new("Test Objects"))

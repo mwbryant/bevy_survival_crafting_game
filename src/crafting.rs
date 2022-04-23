@@ -11,9 +11,6 @@ pub struct CraftingBox {
     recipe_index: usize,
 }
 
-//FIXME this has no real connection to the box size
-pub const CRAFTING_BOX_SIZE: f32 = 0.1;
-
 pub struct CraftingBook {
     pub(crate) recipes: Vec<CraftingRecipe>,
 }
@@ -78,10 +75,11 @@ impl CraftingPlugin {
             assert!(transform.scale == Vec3::splat(1.0));
             let translation = transform.translation;
             //TODO use bevy aabb collide method
-            if !(mouse_pos.0.x > translation.x - 0.5 * CRAFTING_BOX_SIZE
-                && mouse_pos.0.x < translation.x + 0.5 * CRAFTING_BOX_SIZE
-                && mouse_pos.0.y > translation.y - 0.5 * CRAFTING_BOX_SIZE
-                && mouse_pos.0.y < translation.y + 0.5 * CRAFTING_BOX_SIZE)
+            // 80% of the dimensions of the box, that's 0.4 in either direction
+            if !(mouse_pos.0.x > translation.x - 0.4
+                && mouse_pos.0.x < translation.x + 0.4
+                && mouse_pos.0.y > translation.y - 0.4
+                && mouse_pos.0.y < translation.y + 0.4)
             {
                 continue;
             }
@@ -163,12 +161,10 @@ impl CraftingPlugin {
     ) {
         let camera_ent = camera_query.single();
 
-        let spacing = 0.20;
-
-        let starting_y = (book.recipes.len() as f32 / 2.0 + 0.5) * spacing;
+        let starting_y = book.recipes.len() as f32 / 2.0 - 0.5;
 
         let mut sprite = TextureAtlasSprite::new(graphics.box_index);
-        sprite.custom_size = Some(Vec2::splat(PIXEL_SIZE * 32.));
+        sprite.custom_size = Some(Vec2::splat(1.));
 
         //could enumerate book
         let boxes: Vec<Entity> = book
@@ -181,8 +177,8 @@ impl CraftingPlugin {
                         sprite: sprite.clone(),
                         texture_atlas: graphics.texture_atlas.clone(),
                         transform: Transform::from_xyz(
-                            -0.9 * RESOLUTION,
-                            starting_y - spacing * i as f32,
+                            -7.5,
+                            starting_y - i as f32,
                             -1.0,
                         ),
                         ..Default::default()

@@ -1,4 +1,4 @@
-use crate::prelude::{Player, RESOLUTION};
+use crate::prelude::{Player, TILE_SIZE};
 use bevy::prelude::*;
 use bevy::render::camera::ScalingMode;
 
@@ -14,7 +14,8 @@ impl Plugin for GameCameraPlugin {
             Self::spawn_camera.label("camera"),
         )
         .add_system_to_stage(
-            //The camera should update after all other game systems to enforce determinism and prevent jittering
+            //The camera transform should update its position after all other transforms to prevent non-deterministic behavior and jitter
+            //For example, without this, some times you run the game the player will be visibly rendered in the wrong position when moving
             CoreStage::PostUpdate,
             Self::camera_follow
         );
@@ -26,11 +27,10 @@ impl GameCameraPlugin {
         commands.spawn_bundle(UiCameraBundle::default());
 
         let mut camera = OrthographicCameraBundle::new_2d();
-        camera.orthographic_projection.left = -1.0 * RESOLUTION;
-        camera.orthographic_projection.right = 1.0 * RESOLUTION;
-        camera.orthographic_projection.top = 1.0;
-        camera.orthographic_projection.bottom = -1.0;
-        camera.orthographic_projection.scaling_mode = ScalingMode::None;
+
+        // One unit in world space is one tile
+        camera.orthographic_projection.scale = 1. / TILE_SIZE;
+        camera.orthographic_projection.scaling_mode = ScalingMode::WindowSize;
 
         commands.spawn_bundle(camera).insert(GameCamera);
     }

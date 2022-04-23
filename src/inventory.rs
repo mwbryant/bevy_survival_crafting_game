@@ -3,7 +3,7 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::{
     item::{ItemAndCount, WorldObject},
-    prelude::{GameCamera, GameError, GameErrorType, Graphics, ItemType, PIXEL_SIZE, RESOLUTION},
+    prelude::{GameCamera, GameError, GameErrorType, Graphics, ItemType, TILE_SIZE},
 };
 
 pub const INVENTORY_SIZE: usize = 5;
@@ -199,14 +199,17 @@ fn spawn_inventory_ui(
     let mut boxes = Vec::new();
     let mut ui_texts = Vec::new();
 
-    let spacing = 0.20;
-    let spacing_percent = spacing / 2.0 / RESOLUTION * 100.0;
+    //Spacing is one unit in pixels divided by one percent of the window width in pixels
+    let spacing_percent = TILE_SIZE / 1600. * 100.;
 
-    let starting_x = (-(INVENTORY_SIZE as f32) / 2.0 + 0.5) * spacing;
-    let starting_percent = (0.5 + starting_x / 2.0 / RESOLUTION) * 100.0 + 0.9;
+    //Used to offset the inventory count text to place it in the corner of the box
+    let text_x_offset_percent = spacing_percent * 0.7;
+
+    let starting_x = -(INVENTORY_SIZE as f32) / 2. + 0.5;
+    let starting_percent = 50. - (INVENTORY_SIZE as f32 * spacing_percent / 2.) + text_x_offset_percent;
 
     let mut sprite = TextureAtlasSprite::new(graphics.box_index);
-    sprite.custom_size = Some(Vec2::splat(PIXEL_SIZE * 32.));
+    sprite.custom_size = Some(Vec2::splat(1.));
 
     for i in 0..INVENTORY_SIZE {
         ui_texts.push(
@@ -216,7 +219,7 @@ fn spawn_inventory_ui(
                         align_self: AlignSelf::Auto,
                         position_type: PositionType::Absolute,
                         position: Rect {
-                            bottom: Val::Percent(7.0),
+                            bottom: Val::Percent(4.0),
                             left: Val::Percent(starting_percent + spacing_percent * i as f32),
                             ..Default::default()
                         },
@@ -248,7 +251,7 @@ fn spawn_inventory_ui(
                     sprite: sprite.clone(),
                     texture_atlas: graphics.texture_atlas.clone(),
                     transform: Transform {
-                        translation: Vec3::new(starting_x + spacing * i as f32, -0.8, -1.0),
+                        translation: Vec3::new(starting_x + i as f32, -4.0, -1.0),
                         ..Default::default()
                     },
                     ..Default::default()
