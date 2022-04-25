@@ -1,5 +1,5 @@
 [package]
-name = "live_coding_1"
+name = "bevy_survival_crafting_game"
 version = "0.1.0"
 edition = "2021"
 
