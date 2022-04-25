@@ -199,53 +199,12 @@ fn spawn_inventory_ui(
     let mut boxes = Vec::new();
     let mut ui_texts = Vec::new();
 
-    //Spacing is one unit in pixels divided by one percent of the window width in pixels
-    let spacing_percent = TILE_SIZE / 1600. * 100.;
-
-    //Used to offset the inventory count text to place it in the corner of the box
-    let text_x_offset_percent = spacing_percent * 0.7;
-
     let starting_x = -(INVENTORY_SIZE as f32) / 2. + 0.5;
-    let starting_percent =
-        50. - (INVENTORY_SIZE as f32 * spacing_percent / 2.) + text_x_offset_percent;
 
     let mut sprite = TextureAtlasSprite::new(graphics.box_index);
     sprite.custom_size = Some(Vec2::splat(1.));
 
     for i in 0..INVENTORY_SIZE {
-        ui_texts.push(
-            commands
-                .spawn_bundle(TextBundle {
-                    style: Style {
-                        align_self: AlignSelf::Auto,
-                        position_type: PositionType::Absolute,
-                        position: Rect {
-                            bottom: Val::Percent(4.0),
-                            left: Val::Percent(starting_percent + spacing_percent * i as f32),
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    },
-                    text: Text::with_section(
-                        format!("{}", 0),
-                        TextStyle {
-                            //TODO don't load the font everytime please
-                            //Or is the assetserver smart enough to not reload?
-                            font: assets.load("QuattrocentoSans-Regular.ttf"),
-                            font_size: 22.0,
-                            color: Color::WHITE,
-                        },
-                        TextAlignment {
-                            horizontal: HorizontalAlign::Right,
-                            ..Default::default()
-                        },
-                    ),
-                    ..Default::default()
-                })
-                .insert(UiCountText { slot: i })
-                .insert(Name::new("Inventory Count"))
-                .id(),
-        );
         boxes.push(
             commands
                 .spawn_bundle(SpriteSheetBundle {
@@ -261,12 +220,66 @@ fn spawn_inventory_ui(
                 .insert(Name::new("InventoryBox"))
                 .id(),
         );
+        ui_texts.push(
+            commands
+                //TODO use bevy buttons instead of custom button click
+                //TODO update this when https://github.com/bevyengine/bevy/pull/3792 merges
+                .spawn_bundle(ButtonBundle {
+                    style: Style {
+                        size: Size {
+                            width: Val::Px(TILE_SIZE),
+                            height: Val::Px(TILE_SIZE),
+                        },
+                        justify_content: JustifyContent::FlexEnd,
+                        ..default()
+                    },
+                    color: Color::NONE.into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent
+                        .spawn_bundle(TextBundle {
+                            style: Style {
+                                align_self: AlignSelf::FlexStart,
+                                position: Rect {
+                                    ..Default::default()
+                                },
+                                margin: Rect {
+                                    right: Val::Px(23.),
+                                    bottom: Val::Px(11.),
+                                    ..default()
+                                },
+                                ..Default::default()
+                            },
+                            text: Text::with_section(
+                                format!("{}", 0),
+                                TextStyle {
+                                    font: assets.load("QuattrocentoSans-Regular.ttf"),
+                                    font_size: 22.0,
+                                    color: Color::BLACK,
+                                },
+                                TextAlignment {
+                                    horizontal: HorizontalAlign::Right,
+                                    ..Default::default()
+                                },
+                            ),
+                            ..Default::default()
+                        })
+                        .insert(UiCountText { slot: i })
+                        .insert(Name::new("Inventory Count"));
+                })
+                .id(),
+        );
     }
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                justify_content: JustifyContent::SpaceBetween,
+                size: Size::new(Val::Percent(100.0), Val::Percent(10.0)),
+                position: Rect {
+                    bottom: Val::Percent(1.5),
+                    ..default()
+                },
+                justify_content: JustifyContent::Center,
                 ..Default::default()
             },
             color: Color::NONE.into(),
