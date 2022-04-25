@@ -176,11 +176,7 @@ impl CraftingPlugin {
                     .spawn_bundle(SpriteSheetBundle {
                         sprite: sprite.clone(),
                         texture_atlas: graphics.texture_atlas.clone(),
-                        transform: Transform::from_xyz(
-                            -7.5,
-                            starting_y - i as f32,
-                            -1.0,
-                        ),
+                        transform: Transform::from_xyz(-7.5, starting_y - i as f32, -1.0),
                         ..Default::default()
                     })
                     .insert(CraftingBox {

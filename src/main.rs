@@ -20,12 +20,15 @@ use prelude::{
     CraftingPlugin, GameAssetsPlugin, GameCameraPlugin, InventoryPlugin, ItemsPlugin, PlayerPlugin,
 };
 
+pub const HEIGHT: f32 = 900.;
+pub const RESOLUTION: f32 = 16.0 / 9.0;
+
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::hex("b0c060").unwrap()))
         .insert_resource(WindowDescriptor {
-            width: 1600.0,
-            height: 900.0,
+            width: HEIGHT * RESOLUTION,
+            height: HEIGHT,
             title: "DST clone".to_string(),
             present_mode: PresentMode::Fifo,
             resizable: false,

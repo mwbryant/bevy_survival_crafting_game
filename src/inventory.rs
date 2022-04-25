@@ -206,7 +206,8 @@ fn spawn_inventory_ui(
     let text_x_offset_percent = spacing_percent * 0.7;
 
     let starting_x = -(INVENTORY_SIZE as f32) / 2. + 0.5;
-    let starting_percent = 50. - (INVENTORY_SIZE as f32 * spacing_percent / 2.) + text_x_offset_percent;
+    let starting_percent =
+        50. - (INVENTORY_SIZE as f32 * spacing_percent / 2.) + text_x_offset_percent;
 
     let mut sprite = TextureAtlasSprite::new(graphics.box_index);
     sprite.custom_size = Some(Vec2::splat(1.));

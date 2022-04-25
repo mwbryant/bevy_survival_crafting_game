@@ -55,10 +55,13 @@ impl PlayerPlugin {
                         warn!("{:?}", error);
                     };
                     if let Some(tool) = hands.left {
-                        if inventory.add(&ItemAndCount {
-                            item: ItemType::Tool(tool),
-                            count: 1,
-                        }).is_some() {
+                        if inventory
+                            .add(&ItemAndCount {
+                                item: ItemType::Tool(tool),
+                                count: 1,
+                            })
+                            .is_some()
+                        {
                             //FIXME removing what was in hand might not be able to go back into inventory
                             warn!("Item was lost! on unequip");
                         }

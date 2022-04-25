@@ -226,10 +226,26 @@ impl ItemsPlugin {
         children.push(WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-1., -3.)));
         children.push(WorldObject::Tree.spawn(&mut commands, &graphics, Vec2::new(-1., -1.)));
 
-        children.push(WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(3., 3.)));
-        children.push(WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(3., 1.)));
-        children.push(WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(1., 3.)));
-        children.push(WorldObject::Item(ItemType::Flint).spawn(&mut commands, &graphics, Vec2::new(1., 1.)));
+        children.push(WorldObject::Item(ItemType::Flint).spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(3., 3.),
+        ));
+        children.push(WorldObject::Item(ItemType::Flint).spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(3., 1.),
+        ));
+        children.push(WorldObject::Item(ItemType::Flint).spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(1., 3.),
+        ));
+        children.push(WorldObject::Item(ItemType::Flint).spawn(
+            &mut commands,
+            &graphics,
+            Vec2::new(1., 1.),
+        ));
         commands
             .spawn_bundle(TransformBundle::default())
             .insert(Name::new("Test Objects"))
