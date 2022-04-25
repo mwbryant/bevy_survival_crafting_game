@@ -53,9 +53,9 @@ impl Plugin for GameAssetsPlugin {
     }
 }
 
-pub const RESOLUTION: f32 = 16.0 / 9.0;
-//Three pixels divided by half of the screen height
-pub const PIXEL_SIZE: f32 = 3. / 450.;
+pub const PIXEL_SCALE: f32 = 3.;
+pub const SOURCE_TILE_SIZE: f32 = 32.;
+pub const TILE_SIZE: f32 = SOURCE_TILE_SIZE * PIXEL_SCALE;
 
 pub struct Graphics {
     pub texture_atlas: Handle<TextureAtlas>,
@@ -89,8 +89,8 @@ impl GameAssetsPlugin {
 
             //Set the size to be proportional to the source rectangle
             sprite.custom_size = Some(Vec2::new(
-                rect.size.0 * PIXEL_SIZE,
-                rect.size.1 * PIXEL_SIZE,
+                rect.size.0 / SOURCE_TILE_SIZE,
+                rect.size.1 / SOURCE_TILE_SIZE,
             ));
 
             //Position the sprite anchor if one is defined

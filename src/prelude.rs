@@ -1,5 +1,5 @@
 use crate::assets;
-pub use assets::{GameAssetsPlugin, Graphics, PIXEL_SIZE, RESOLUTION};
+pub use assets::{GameAssetsPlugin, Graphics, TILE_SIZE};
 
 use crate::crafting;
 pub use crafting::CraftingPlugin;
