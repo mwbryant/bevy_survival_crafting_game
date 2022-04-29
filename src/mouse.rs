@@ -1,6 +1,7 @@
-use bevy::{prelude::*, render::camera::RenderTarget};
-
-use crate::prelude::GameCamera;
+use bevy::{
+    prelude::*,
+    render::camera::{Camera2d, RenderTarget},
+};
 
 pub struct MousePlugin;
 
@@ -19,7 +20,7 @@ fn mouse_position(
     wnds: Res<Windows>,
     mut mouse_position: ResMut<MousePosition>,
     // query to get camera transform
-    q_camera: Query<(&Camera, &GlobalTransform), With<GameCamera>>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
 ) {
     // get the camera info and transform
     // assuming there is exactly one main camera entity, so query::single() is OK

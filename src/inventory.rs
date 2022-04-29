@@ -3,7 +3,7 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::{
     item::{ItemAndCount, WorldObject},
-    prelude::{GameCamera, GameError, GameErrorType, Graphics, ItemType, TILE_SIZE},
+    prelude::*,
 };
 
 pub const INVENTORY_SIZE: usize = 5;
@@ -188,13 +188,12 @@ fn update_inventory_ui(
     }
 }
 
-fn spawn_inventory_ui(
-    mut commands: Commands,
-    graphics: Res<Graphics>,
-    camera_query: Query<Entity, With<GameCamera>>,
-    assets: Res<AssetServer>,
-) {
-    let camera_ent = camera_query.single();
+fn spawn_inventory_ui(mut commands: Commands, graphics: Res<Graphics>, assets: Res<AssetServer>) {
+    let camera_follower = commands
+        .spawn_bundle(TransformBundle::default())
+        .insert(CameraFollower)
+        .insert(Name::new("Inventory UI"))
+        .id();
 
     let mut boxes = Vec::new();
     let mut ui_texts = Vec::new();
@@ -287,5 +286,5 @@ fn spawn_inventory_ui(
         })
         .push_children(&ui_texts)
         .insert(Name::new("InventoryText"));
-    commands.entity(camera_ent).push_children(&boxes);
+    commands.entity(camera_follower).push_children(&boxes);
 }

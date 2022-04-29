@@ -153,13 +153,12 @@ impl CraftingPlugin {
         }
     }
 
-    fn spawn_crafting_ui(
-        mut commands: Commands,
-        graphics: Res<Graphics>,
-        camera_query: Query<Entity, With<GameCamera>>,
-        book: Res<CraftingBook>,
-    ) {
-        let camera_ent = camera_query.single();
+    fn spawn_crafting_ui(mut commands: Commands, graphics: Res<Graphics>, book: Res<CraftingBook>) {
+        let camera_follower = commands
+            .spawn_bundle(TransformBundle::default())
+            .insert(CameraFollower)
+            .insert(Name::new("Crafting UI"))
+            .id();
 
         let starting_y = book.recipes.len() as f32 / 2.0 - 0.5;
 
@@ -202,7 +201,7 @@ impl CraftingPlugin {
                     .id()
             })
             .collect();
-        commands.entity(camera_ent).push_children(&boxes);
+        commands.entity(camera_follower).push_children(&boxes);
     }
 }
 impl Inventory {
