@@ -30,6 +30,7 @@ pub enum WorldObject {
 #[derive(Inspectable, Debug, PartialEq, Eq, Clone, Copy, Hash, Deserialize)]
 pub enum Tool {
     Axe,
+    Shovel,
 }
 
 #[derive(Inspectable, Debug, PartialEq, Eq, Clone, Copy, Hash, Deserialize)]
@@ -259,7 +260,7 @@ impl Default for ItemType {
     }
 }
 
-#[derive(Clone, Copy, Default, Inspectable)]
+#[derive(Clone, Copy, Default, Inspectable, Deserialize)]
 pub struct ItemAndCount {
     pub item: ItemType,
     pub count: usize,

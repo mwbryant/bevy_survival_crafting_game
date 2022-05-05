@@ -6,7 +6,7 @@ use crate::{
     prelude::*,
 };
 
-pub const INVENTORY_SIZE: usize = 5;
+pub const INVENTORY_SIZE: usize = 3;
 pub const INVENTORY_ITEM_SIZE: usize = 5;
 
 pub struct InventoryPlugin;
@@ -116,6 +116,7 @@ impl Inventory {
 }
 
 //XXX probably buggy
+//FIXME needs rework, too complex
 fn update_inventory_ui(
     mut commands: Commands,
     inventory_query: Query<&Inventory>,

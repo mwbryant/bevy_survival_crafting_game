@@ -10,9 +10,11 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(Self::spawn_player)
+            .add_startup_system(Self::spawn_hand_ui)
             .add_system(Self::player_movement)
             .add_system(Self::player_pickup)
             .add_system(Self::player_equip)
+            .add_system(Self::update_hand_ui)
             .register_inspectable::<Hands>()
             .register_inspectable::<Player>();
     }
@@ -20,8 +22,10 @@ impl Plugin for PlayerPlugin {
 
 #[derive(Component, Inspectable, Default)]
 pub struct Hands {
-    left: Option<Tool>,
+    tool: Option<Tool>,
 }
+#[derive(Component)]
+pub struct HandsBox;
 
 #[derive(Component, Inspectable)]
 pub struct Player {
@@ -54,7 +58,7 @@ impl PlayerPlugin {
                     }) {
                         warn!("{:?}", error);
                     };
-                    if let Some(tool) = hands.left {
+                    if let Some(tool) = hands.tool {
                         if inventory
                             .add(&ItemAndCount {
                                 item: ItemType::Tool(tool),
@@ -66,7 +70,7 @@ impl PlayerPlugin {
                             warn!("Item was lost! on unequip");
                         }
                     }
-                    hands.left = Some(tool);
+                    hands.tool = Some(tool);
                 }
             }
         }
@@ -131,7 +135,7 @@ impl PlayerPlugin {
                     count: 1,
                 };
                 if inventory.can_add(harvest_and_count) {
-                    if hands.left == harvest.tool_required || harvest.tool_required.is_none() {
+                    if hands.tool == harvest.tool_required || harvest.tool_required.is_none() {
                         inventory.add(&harvest_and_count);
                         commands.entity(ent).despawn_recursive();
                         if let Some(new_object) = harvest.drops {
@@ -172,6 +176,24 @@ impl PlayerPlugin {
         }
     }
 
+    fn update_hand_ui(
+        graphics: Res<Graphics>,
+        mut hands_box: Query<(&mut Visibility, &mut TextureAtlasSprite), With<HandsBox>>,
+        hands: Query<&Hands>,
+    ) {
+        let (mut visible, mut sprite) = hands_box.single_mut();
+        let hands = hands.single();
+        match hands.tool {
+            Some(tool) => {
+                visible.is_visible = true;
+                *sprite = graphics.item_map[&WorldObject::Item(ItemType::Tool(tool))].clone();
+            }
+            None => {
+                visible.is_visible = false;
+            }
+        }
+    }
+
     fn spawn_player(mut commands: Commands, graphics: Res<Graphics>) {
         let mut sprite = TextureAtlasSprite::new(graphics.player_index);
         sprite.custom_size = Some(Vec2::splat(1.));
@@ -193,5 +215,45 @@ impl PlayerPlugin {
             .insert(Inventory::default())
             .insert(Hands::default())
             .insert(Name::new("Player"));
+    }
+
+    fn spawn_hand_ui(mut commands: Commands, graphics: Res<Graphics>) {
+        let mut sprite = TextureAtlasSprite::new(graphics.box_index);
+        sprite.custom_size = Some(Vec2::splat(1.));
+
+        let hand_graphic = commands
+            .spawn_bundle(SpriteSheetBundle {
+                sprite: sprite,
+                texture_atlas: graphics.texture_atlas.clone(),
+                transform: Transform {
+                    translation: Vec3::ZERO,
+                    ..Default::default()
+                },
+                visibility: Visibility { is_visible: false },
+                ..default()
+            })
+            .insert(HandsBox)
+            .id();
+
+        let mut sprite = TextureAtlasSprite::new(graphics.box_index);
+        sprite.custom_size = Some(Vec2::splat(1.));
+        let ui_box = commands
+            .spawn_bundle(SpriteSheetBundle {
+                sprite: sprite,
+                texture_atlas: graphics.texture_atlas.clone(),
+                transform: Transform {
+                    translation: Vec3::new(7.0, -4.0, -1.0),
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .add_child(hand_graphic)
+            .id();
+
+        commands
+            .spawn_bundle(TransformBundle::default())
+            .insert(CameraFollower)
+            .insert(Name::new("Hand UI"))
+            .add_child(ui_box);
     }
 }

@@ -1,0 +1,30 @@
+(
+    recipes: [
+        CraftingRecipe (
+            needed: [
+                ItemAndCount (
+                    item: Twig,
+                    count: 1,
+                ),
+                ItemAndCount (
+                    item: Flint,
+                    count: 1,
+                ),
+            ],
+            produces: Tool(Axe),
+        ),
+        CraftingRecipe (
+            needed: [
+                ItemAndCount (
+                    item: Twig,
+                    count: 1,
+                ),
+                ItemAndCount (
+                    item: Flint,
+                    count: 2aaaaa,
+                ),
+            ],
+            produces: Tool(Shovel),
+        ),
+    ],
+)

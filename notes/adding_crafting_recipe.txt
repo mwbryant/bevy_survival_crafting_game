@@ -1,0 +1,4 @@
+//TODO basic items (food and stuff) shouldn't need code changes to add
+Step 1: Add new item/tool to the ItemType enum 
+Step 2: Define its graphic in assets/sprites_desc.ron
+Step 3: Define the recipe in recipes.ron

@@ -1,5 +1,8 @@
+use std::fs;
+
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use serde::Deserialize;
 
 use crate::{item::WorldObject, prelude::*};
 
@@ -11,11 +14,12 @@ pub struct CraftingBox {
     recipe_index: usize,
 }
 
+#[derive(Clone, Deserialize)]
 pub struct CraftingBook {
     pub(crate) recipes: Vec<CraftingRecipe>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct CraftingRecipe {
     pub(crate) needed: Vec<ItemAndCount>,
     pub(crate) produces: ItemType,
@@ -25,41 +29,19 @@ pub struct CraftingPlugin;
 
 impl Plugin for CraftingPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(CraftingBook {
-            recipes: vec![
-                CraftingRecipe {
-                    needed: vec![
-                        ItemAndCount {
-                            item: ItemType::Twig,
-                            count: 1,
-                        },
-                        ItemAndCount {
-                            item: ItemType::Flint,
-                            count: 1,
-                        },
-                    ],
-                    produces: ItemType::Tool(Tool::Axe),
-                },
-                CraftingRecipe {
-                    needed: vec![
-                        ItemAndCount {
-                            item: ItemType::Wood,
-                            count: 1,
-                        },
-                        ItemAndCount {
-                            item: ItemType::Grass,
-                            count: 2,
-                        },
-                    ],
-                    produces: ItemType::Fire,
-                },
-            ],
-        })
-        .add_startup_system(Self::spawn_crafting_ui)
-        .add_system(Self::crafting_ui_graying)
-        .add_system(Self::test_crafting)
-        .add_system(Self::crafting_ui_active)
-        .register_inspectable::<CraftingBox>();
+        let crafting_desc = fs::read_to_string("assets/recipes.ron").unwrap();
+
+        let crafting_book: CraftingBook = ron::de::from_str(&crafting_desc).unwrap_or_else(|e| {
+            println!("Failed to load config: {}", e);
+            std::process::exit(1);
+        });
+
+        app.insert_resource(crafting_book)
+            .add_startup_system(Self::spawn_crafting_ui)
+            .add_system(Self::crafting_ui_graying)
+            .add_system(Self::test_crafting)
+            .add_system(Self::crafting_ui_active)
+            .register_inspectable::<CraftingBox>();
     }
 }
 
