@@ -21,7 +21,7 @@
                 ),
                 ItemAndCount (
                     item: Flint,
-                    count: 2aaaaa,
+                    count: 2,
                 ),
             ],
             produces: Tool(Shovel),
