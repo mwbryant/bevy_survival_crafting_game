@@ -2,13 +2,17 @@ use crate::prelude::{Player, TILE_SIZE};
 use crate::{HEIGHT, RESOLUTION};
 use bevy::prelude::*;
 use bevy::render::camera::{Camera2d, ScalingMode};
+use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 pub struct GameCameraPlugin;
 
 /// Marks something that should always be in a constant place on screen,
 /// used for UI
-#[derive(Component)]
-pub struct CameraFollower;
+#[derive(Component, Default, Inspectable)]
+pub struct CameraFollower {
+    //TODO find a better way to force ordering
+    pub offset: f32,
+}
 
 impl Plugin for GameCameraPlugin {
     fn build(&self, app: &mut App) {
@@ -25,7 +29,8 @@ impl Plugin for GameCameraPlugin {
             //For example, without this, some times you run the game the player will be visibly rendered in the wrong position when moving
             CoreStage::PostUpdate,
             Self::camera_follows_player,
-        );
+        )
+        .register_inspectable::<CameraFollower>();
     }
 }
 
@@ -46,14 +51,14 @@ impl GameCameraPlugin {
     }
 
     fn camera_follow(
-        mut follower_query: Query<&mut Transform, With<CameraFollower>>,
+        mut follower_query: Query<(&mut Transform, &CameraFollower)>,
         camera_query: Query<&Transform, (With<Camera2d>, Without<CameraFollower>)>,
     ) {
         let camera_translation = camera_query.single().translation;
-        for mut transform in follower_query.iter_mut() {
+        for (mut transform, follow) in follower_query.iter_mut() {
             transform.translation.x = camera_translation.x;
             transform.translation.y = camera_translation.y;
-            transform.translation.z = 999.9;
+            transform.translation.z = 999.9 + follow.offset;
         }
     }
 

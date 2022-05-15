@@ -21,3 +21,6 @@ pub use mouse::{MousePlugin, MousePosition};
 
 use crate::error;
 pub use error::{GameError, GameErrorType};
+
+use crate::fire_graphics;
+pub use fire_graphics::FireGraphicsPlugin;

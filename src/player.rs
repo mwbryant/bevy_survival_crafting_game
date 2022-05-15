@@ -252,7 +252,7 @@ impl PlayerPlugin {
 
         commands
             .spawn_bundle(TransformBundle::default())
-            .insert(CameraFollower)
+            .insert(CameraFollower::default())
             .insert(Name::new("Hand UI"))
             .add_child(ui_box);
     }

@@ -192,7 +192,7 @@ fn update_inventory_ui(
 fn spawn_inventory_ui(mut commands: Commands, graphics: Res<Graphics>, assets: Res<AssetServer>) {
     let camera_follower = commands
         .spawn_bundle(TransformBundle::default())
-        .insert(CameraFollower)
+        .insert(CameraFollower::default())
         .insert(Name::new("Inventory UI"))
         .id();
 

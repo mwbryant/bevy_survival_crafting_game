@@ -138,7 +138,7 @@ impl CraftingPlugin {
     fn spawn_crafting_ui(mut commands: Commands, graphics: Res<Graphics>, book: Res<CraftingBook>) {
         let camera_follower = commands
             .spawn_bundle(TransformBundle::default())
-            .insert(CameraFollower)
+            .insert(CameraFollower::default())
             .insert(Name::new("Crafting UI"))
             .id();
 

@@ -7,6 +7,7 @@ use bevy_inspector_egui::WorldInspectorPlugin;
 mod assets;
 mod crafting;
 mod error;
+mod fire_graphics;
 mod game_camera;
 mod inventory;
 mod item;
@@ -17,7 +18,8 @@ mod prelude;
 use mouse::MousePlugin;
 // todo implement `PluginGroup`
 use prelude::{
-    CraftingPlugin, GameAssetsPlugin, GameCameraPlugin, InventoryPlugin, ItemsPlugin, PlayerPlugin,
+    CraftingPlugin, FireGraphicsPlugin, GameAssetsPlugin, GameCameraPlugin, InventoryPlugin,
+    ItemsPlugin, PlayerPlugin,
 };
 
 pub const HEIGHT: f32 = 900.;
@@ -43,5 +45,6 @@ fn main() {
         .add_plugin(InventoryPlugin)
         .add_plugin(CraftingPlugin)
         .add_plugin(GameCameraPlugin)
+        .add_plugin(FireGraphicsPlugin)
         .run();
 }

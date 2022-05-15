@@ -26,5 +26,10 @@
             ],
             produces: Tool(Shovel),
         ),
+        CraftingRecipe (
+            needed: [
+            ],
+            produces: Fire,
+        ),
     ],
 )
