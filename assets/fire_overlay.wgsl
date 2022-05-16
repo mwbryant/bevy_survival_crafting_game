@@ -8,6 +8,7 @@ struct VertexOutput {
 struct Fire {
     position: vec2<f32>;
     strength: f32;
+    test: f32;
 };
 
 struct Fires {
