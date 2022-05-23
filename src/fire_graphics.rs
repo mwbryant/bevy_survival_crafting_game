@@ -6,6 +6,8 @@ use bevy::render::render_resource::*;
 use bevy::render::renderer::{RenderDevice, RenderQueue};
 use bevy::sprite::{Material2dPipeline, Material2dPlugin, MaterialMesh2dBundle};
 use bevy::{prelude::*, sprite::Material2d};
+use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use std::collections::HashMap;
 
 use crate::prelude::{CameraFollower, TILE_SIZE};
 
@@ -25,7 +27,7 @@ struct FireGpu {
     //Buffer is bound with size 12 where the shader expects 16 in group[1] compact index 0
     test: f32,
 }
-#[derive(Clone, Component)]
+#[derive(Clone, Component, Inspectable)]
 struct Fire {
     strength: f32,
 }
@@ -33,7 +35,27 @@ struct Fire {
 ///Resource containing all active fires
 #[derive(Clone, Default)]
 struct ActiveFires {
-    fires: Vec<Fire>,
+    fires: HashMap<u32, FireGpu>,
+}
+
+impl ActiveFires {
+    fn insert(&mut self, fire_id: u32, position: Vec2, strength: f32) {
+        self.fires.insert(
+            fire_id,
+            FireGpu {
+                position,
+                strength,
+                test: 0.0,
+            },
+        );
+    }
+    fn remove(&mut self, fire_id: u32) {
+        self.fires.remove(&fire_id);
+    }
+
+    fn get_fire_gpus(&self) -> Vec<FireGpu> {
+        self.fires.values().map(|v| v.clone()).collect()
+    }
 }
 
 #[derive(Clone, TypeUuid, Default)]
@@ -47,56 +69,75 @@ impl Plugin for FireGraphicsPlugin {
         app.add_plugin(Material2dPlugin::<FireMaterial>::default())
             .init_resource::<ActiveFires>()
             .add_system(update_fire_overlay)
+            .add_system_to_stage(CoreStage::PostUpdate, remove_fire_from_overlay)
             .add_startup_system(spawn_fire)
-            .add_startup_system(spawn_fire_overlay);
+            .add_startup_system(spawn_fire_overlay)
+            .register_inspectable::<Fire>();
     }
 }
 
-//TODO handle removed fires, see cheatbook
-//TODO make this run on changed
 fn update_fire_overlay(
     mut material_assets: ResMut<Assets<FireMaterial>>,
     mut overlay: Query<&mut Handle<FireMaterial>>,
-    changed_fires: Query<(&Fire, &Transform)>,
+    changed_fires: Query<
+        (Entity, &Fire, &Transform),
+        Or<((Changed<Transform>, With<Fire>), Changed<Fire>)>,
+    >,
+    mut active_fires: ResMut<ActiveFires>,
 ) {
-    let mut fire_vec = Vec::new();
-    for (fire, transform) in changed_fires.iter() {
-        fire_vec.push(FireGpu {
-            position: transform.translation.truncate(),
-            strength: fire.strength,
-            test: 0.0,
-        });
+    for (entity, fire, transform) in changed_fires.iter() {
+        active_fires.insert(entity.id(), transform.translation.truncate(), fire.strength);
     }
     let mut overlay = overlay.single_mut();
     //FIXME Do not create handles every frame, solve this using the same technique as the animate shader example
     *overlay = material_assets.add(FireMaterial {
-        active_fires: fire_vec,
+        active_fires: active_fires.get_fire_gpus(),
     });
 }
 
-fn spawn_fire(mut commands: Commands) {
-    commands
+fn remove_fire_from_overlay(
+    removed_fire: RemovedComponents<Fire>,
+    mut active_fires: ResMut<ActiveFires>,
+) {
+    for fire in removed_fire.iter() {
+        active_fires.remove(fire.id());
+    }
+}
+
+fn spawn_fire(mut commands: Commands, mut active_fires: ResMut<ActiveFires>) {
+    let mut fire = commands
         .spawn_bundle(TransformBundle::default())
         .insert(Fire { strength: 2.0 })
-        .insert(Name::new("Fire"));
-    commands
+        .insert(Name::new("Fire"))
+        .id();
+    active_fires.insert(
+        fire.id(),
+        TransformBundle::default().local.translation.truncate(),
+        2.0,
+    );
+    fire = commands
         .spawn_bundle(TransformBundle::from_transform(Transform::from_xyz(
             0.5, 1.0, 0.0,
         )))
         .insert(Fire { strength: 1.0 })
-        .insert(Name::new("Fire"));
-    commands
+        .insert(Name::new("Fire"))
+        .id();
+    active_fires.insert(fire.id(), Vec2::new(0.5, 1.0), 1.0);
+    fire = commands
         .spawn_bundle(TransformBundle::from_transform(Transform::from_xyz(
             -1.5, 2.0, 0.0,
         )))
         .insert(Fire { strength: 4.0 })
-        .insert(Name::new("Fire"));
+        .insert(Name::new("Fire"))
+        .id();
+    active_fires.insert(fire.id(), Vec2::new(-1.5, 2.0), 4.0);
 }
 
 fn spawn_fire_overlay(
     mut commands: Commands,
     mut mesh_assets: ResMut<Assets<Mesh>>,
     mut material_assets: ResMut<Assets<FireMaterial>>,
+    active_fires: Res<ActiveFires>,
 ) {
     commands
         .spawn_bundle(MaterialMesh2dBundle {
@@ -104,11 +145,7 @@ fn spawn_fire_overlay(
                 .add(Mesh::from(shape::Quad::new(Vec2::splat(TILE_SIZE * 100.0))))
                 .into(),
             material: material_assets.add(FireMaterial {
-                active_fires: vec![FireGpu {
-                    position: Vec2::splat(2.0),
-                    strength: 3.0,
-                    test: 0.0,
-                }],
+                active_fires: active_fires.get_fire_gpus(),
             }),
             ..default()
         })
