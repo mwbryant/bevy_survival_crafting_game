@@ -1,9 +1,9 @@
 use bevy::ecs::system::lifetimeless::SRes;
 use bevy::reflect::TypeUuid;
-use bevy::render::render_asset::{self, RenderAsset};
+use bevy::render::render_asset::{self, RenderAsset, RenderAssets};
 use bevy::render::render_resource::std430::AsStd430;
-use bevy::render::render_resource::*;
 use bevy::render::renderer::{RenderDevice, RenderQueue};
+use bevy::render::{render_resource::*, RenderApp, RenderStage};
 use bevy::sprite::{Material2dPipeline, Material2dPlugin, MaterialMesh2dBundle};
 use bevy::{prelude::*, sprite::Material2d};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
@@ -70,15 +70,36 @@ impl Plugin for FireGraphicsPlugin {
             .init_resource::<ActiveFires>()
             .add_system(update_fire_overlay)
             .add_system_to_stage(CoreStage::PostUpdate, remove_fire_from_overlay)
-            .add_startup_system(spawn_fire)
+            .add_startup_system(spawn_fire.before(spawn_fire_overlay))
             .add_startup_system(spawn_fire_overlay)
             .register_inspectable::<Fire>();
+
+        app.sub_app_mut(RenderApp)
+            .add_system_to_stage(RenderStage::Extract, extract_fires)
+            .add_system_to_stage(RenderStage::Prepare, prepare_fires);
+    }
+}
+
+fn extract_fires(mut commands: Commands, fires: Res<ActiveFires>) {
+    commands.insert_resource(fires.clone());
+}
+
+fn prepare_fires(
+    fires: Res<ActiveFires>,
+    mut material: ResMut<RenderAssets<FireMaterial>>,
+    render_device: Res<RenderDevice>,
+    queue: Res<RenderQueue>,
+) {
+    println!("active {}", fires.fires.len());
+    assert!(material.len() <= 1);
+    for material in material.values_mut() {
+        material.storage_buffer.clear();
+        material.storage_buffer.append(&mut fires.get_fire_gpus());
+        material.storage_buffer.write_buffer(&render_device, &queue);
     }
 }
 
 fn update_fire_overlay(
-    mut material_assets: ResMut<Assets<FireMaterial>>,
-    mut overlay: Query<&mut Handle<FireMaterial>>,
     changed_fires: Query<
         (Entity, &Fire, &Transform),
         Or<((Changed<Transform>, With<Fire>), Changed<Fire>)>,
@@ -88,11 +109,6 @@ fn update_fire_overlay(
     for (entity, fire, transform) in changed_fires.iter() {
         active_fires.insert(entity, transform.translation.truncate(), fire.strength);
     }
-    let mut overlay = overlay.single_mut();
-    //FIXME Do not create handles every frame, solve this using the same technique as the animate shader example
-    *overlay = material_assets.add(FireMaterial {
-        active_fires: active_fires.get_fire_gpus(),
-    });
 }
 
 fn remove_fire_from_overlay(
@@ -155,6 +171,7 @@ fn spawn_fire_overlay(
 
 struct FireMaterialGpu {
     bind_group: BindGroup,
+    storage_buffer: StorageBuffer<FireGpu>,
 }
 
 impl Material2d for FireMaterial {
@@ -209,7 +226,7 @@ impl RenderAsset for FireMaterial {
     ) -> Result<Self::PreparedAsset, render_asset::PrepareAssetError<Self::ExtractedAsset>> {
         //FIXME support gpus that don't support storages,
         // see how bevy handles gpu lights
-        let mut storage_buffer = StorageBuffer::<FireGpu>::default();
+        let mut storage_buffer = StorageBuffer::<FireGpu, ()>::default();
 
         let mut data = extracted_asset.active_fires;
         storage_buffer.append(&mut data);
@@ -225,6 +242,9 @@ impl RenderAsset for FireMaterial {
             }],
         });
 
-        Ok(FireMaterialGpu { bind_group })
+        Ok(FireMaterialGpu {
+            bind_group,
+            storage_buffer,
+        })
     }
 }
