@@ -2,7 +2,7 @@
 #![allow(clippy::expect_fun_call)]
 #![allow(clippy::type_complexity)]
 use bevy::{prelude::*, window::PresentMode};
-use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
 
 mod assets;
 mod crafting;
@@ -37,6 +37,10 @@ fn main() {
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
+        .insert_resource(WorldInspectorParams {
+            despawnable_entities: true,
+            ..Default::default()
+        })
         .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(GameAssetsPlugin)
         .add_plugin(PlayerPlugin)
