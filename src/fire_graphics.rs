@@ -35,13 +35,13 @@ struct Fire {
 ///Resource containing all active fires
 #[derive(Clone, Default)]
 struct ActiveFires {
-    fires: HashMap<u32, FireGpu>,
+    fires: HashMap<Entity, FireGpu>,
 }
 
 impl ActiveFires {
-    fn insert(&mut self, fire_id: u32, position: Vec2, strength: f32) {
+    fn insert(&mut self, fire_entity: Entity, position: Vec2, strength: f32) {
         self.fires.insert(
-            fire_id,
+            fire_entity,
             FireGpu {
                 position,
                 strength,
@@ -49,12 +49,12 @@ impl ActiveFires {
             },
         );
     }
-    fn remove(&mut self, fire_id: u32) {
-        self.fires.remove(&fire_id);
+    fn remove(&mut self, fire_entity: Entity) {
+        self.fires.remove(&fire_entity);
     }
 
     fn get_fire_gpus(&self) -> Vec<FireGpu> {
-        self.fires.values().map(|v| v.clone()).collect()
+        self.fires.values().cloned().collect()
     }
 }
 
@@ -86,7 +86,7 @@ fn update_fire_overlay(
     mut active_fires: ResMut<ActiveFires>,
 ) {
     for (entity, fire, transform) in changed_fires.iter() {
-        active_fires.insert(entity.id(), transform.translation.truncate(), fire.strength);
+        active_fires.insert(entity, transform.translation.truncate(), fire.strength);
     }
     let mut overlay = overlay.single_mut();
     //FIXME Do not create handles every frame, solve this using the same technique as the animate shader example
@@ -100,7 +100,7 @@ fn remove_fire_from_overlay(
     mut active_fires: ResMut<ActiveFires>,
 ) {
     for fire in removed_fire.iter() {
-        active_fires.remove(fire.id());
+        active_fires.remove(fire);
     }
 }
 
@@ -111,7 +111,7 @@ fn spawn_fire(mut commands: Commands, mut active_fires: ResMut<ActiveFires>) {
         .insert(Name::new("Fire"))
         .id();
     active_fires.insert(
-        fire.id(),
+        fire,
         TransformBundle::default().local.translation.truncate(),
         2.0,
     );
@@ -122,7 +122,7 @@ fn spawn_fire(mut commands: Commands, mut active_fires: ResMut<ActiveFires>) {
         .insert(Fire { strength: 1.0 })
         .insert(Name::new("Fire"))
         .id();
-    active_fires.insert(fire.id(), Vec2::new(0.5, 1.0), 1.0);
+    active_fires.insert(fire, Vec2::new(0.5, 1.0), 1.0);
     fire = commands
         .spawn_bundle(TransformBundle::from_transform(Transform::from_xyz(
             -1.5, 2.0, 0.0,
@@ -130,7 +130,7 @@ fn spawn_fire(mut commands: Commands, mut active_fires: ResMut<ActiveFires>) {
         .insert(Fire { strength: 4.0 })
         .insert(Name::new("Fire"))
         .id();
-    active_fires.insert(fire.id(), Vec2::new(-1.5, 2.0), 4.0);
+    active_fires.insert(fire, Vec2::new(-1.5, 2.0), 4.0);
 }
 
 fn spawn_fire_overlay(
