@@ -1,9 +1,9 @@
 use bevy::ecs::system::lifetimeless::SRes;
 use bevy::reflect::TypeUuid;
-use bevy::render::render_asset::{self, RenderAsset};
-use bevy::render::render_resource::std430::AsStd430;
-use bevy::render::render_resource::*;
+use bevy::render::render_asset::{self, RenderAsset, RenderAssets};
+use bevy::render::render_resource::std140::{AsStd140, Std140};
 use bevy::render::renderer::{RenderDevice, RenderQueue};
+use bevy::render::{render_resource::*, RenderApp, RenderStage};
 use bevy::sprite::{Material2dPipeline, Material2dPlugin, MaterialMesh2dBundle};
 use bevy::{prelude::*, sprite::Material2d};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
@@ -13,19 +13,12 @@ use crate::prelude::{CameraFollower, TILE_SIZE};
 
 pub struct FireGraphicsPlugin;
 
-#[derive(Clone, Component, Default, AsStd430)]
+pub const MAX_FIRES: usize = 64;
+
+#[derive(Clone, Component, Default, AsStd140, Copy)]
 struct FireGpu {
     position: Vec2,
     strength: f32,
-    //BUG? Is this a bevy bug with padding?
-    //Crashes with following message when test is removed:
-    //Caused by:
-    //In a RenderPass
-    //note: encoder = `<CommandBuffer-(0, 1, Vulkan)>`
-    //In a draw command, indexed:true indirect:false
-    //note: render pipeline = `transparent_mesh2d_pipeline`
-    //Buffer is bound with size 12 where the shader expects 16 in group[1] compact index 0
-    test: f32,
 }
 #[derive(Clone, Component, Inspectable)]
 struct Fire {
@@ -40,14 +33,8 @@ struct ActiveFires {
 
 impl ActiveFires {
     fn insert(&mut self, fire_entity: Entity, position: Vec2, strength: f32) {
-        self.fires.insert(
-            fire_entity,
-            FireGpu {
-                position,
-                strength,
-                test: 0.0,
-            },
-        );
+        self.fires
+            .insert(fire_entity, FireGpu { position, strength });
     }
     fn remove(&mut self, fire_entity: Entity) {
         self.fires.remove(&fire_entity);
@@ -73,12 +60,32 @@ impl Plugin for FireGraphicsPlugin {
             .add_startup_system(spawn_fire)
             .add_startup_system(spawn_fire_overlay)
             .register_inspectable::<Fire>();
+        app.sub_app_mut(RenderApp)
+            .add_system_to_stage(RenderStage::Extract, extract_fire)
+            .add_system_to_stage(RenderStage::Queue, prepare_fire);
+    }
+}
+
+fn extract_fire(mut commands: Commands, fires: Res<ActiveFires>) {
+    commands.insert_resource(fires.clone());
+}
+
+fn prepare_fire(
+    render_queue: Res<RenderQueue>,
+    active_fires: Res<ActiveFires>,
+    assets: Res<RenderAssets<FireMaterial>>,
+) {
+    for asset in assets.values() {
+        let mut fires = [FireGpu::default(); MAX_FIRES];
+        let data = active_fires.get_fire_gpus();
+        for (i, fire) in data.iter().enumerate() {
+            fires[i] = *fire;
+        }
+        render_queue.write_buffer(&asset.buffer, 0, fires.as_std140().as_bytes());
     }
 }
 
 fn update_fire_overlay(
-    mut material_assets: ResMut<Assets<FireMaterial>>,
-    mut overlay: Query<&mut Handle<FireMaterial>>,
     changed_fires: Query<
         (Entity, &Fire, &Transform),
         Or<((Changed<Transform>, With<Fire>), Changed<Fire>)>,
@@ -88,11 +95,6 @@ fn update_fire_overlay(
     for (entity, fire, transform) in changed_fires.iter() {
         active_fires.insert(entity, transform.translation.truncate(), fire.strength);
     }
-    let mut overlay = overlay.single_mut();
-    //FIXME Do not create handles every frame, solve this using the same technique as the animate shader example
-    *overlay = material_assets.add(FireMaterial {
-        active_fires: active_fires.get_fire_gpus(),
-    });
 }
 
 fn remove_fire_from_overlay(
@@ -155,6 +157,7 @@ fn spawn_fire_overlay(
 
 struct FireMaterialGpu {
     bind_group: BindGroup,
+    buffer: Buffer,
 }
 
 impl Material2d for FireMaterial {
@@ -173,7 +176,7 @@ impl Material2d for FireMaterial {
                 binding: 0,
                 visibility: ShaderStages::FRAGMENT,
                 ty: BindingType::Buffer {
-                    ty: BufferBindingType::Storage { read_only: true },
+                    ty: BufferBindingType::Uniform,
                     has_dynamic_offset: false,
                     min_binding_size: None,
                 },
@@ -196,7 +199,6 @@ impl RenderAsset for FireMaterial {
     type Param = (
         SRes<RenderDevice>,
         SRes<Material2dPipeline<FireMaterial>>,
-        SRes<RenderQueue>,
     );
 
     fn extract_asset(&self) -> Self::ExtractedAsset {
@@ -205,26 +207,30 @@ impl RenderAsset for FireMaterial {
 
     fn prepare_asset(
         extracted_asset: Self::ExtractedAsset,
-        (render_device, pipeline, queue): &mut bevy::ecs::system::SystemParamItem<Self::Param>,
+        (render_device, pipeline): &mut bevy::ecs::system::SystemParamItem<Self::Param>,
     ) -> Result<Self::PreparedAsset, render_asset::PrepareAssetError<Self::ExtractedAsset>> {
-        //FIXME support gpus that don't support storages,
-        // see how bevy handles gpu lights
-        let mut storage_buffer = StorageBuffer::<FireGpu>::default();
 
-        let mut data = extracted_asset.active_fires;
-        storage_buffer.append(&mut data);
+        let mut fires = [FireGpu::default(); MAX_FIRES];
+        let data = extracted_asset.active_fires;
+        for (i, fire) in data.iter().enumerate() {
+            fires[i] = *fire;
+        }
 
-        storage_buffer.write_buffer(render_device, queue);
+        let buffer = render_device.create_buffer_with_data(&BufferInitDescriptor {
+            label: None,
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+            contents: fires.as_std140().as_bytes(),
+        });
 
         let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
             label: None,
             layout: &pipeline.material2d_layout,
             entries: &[BindGroupEntry {
                 binding: 0,
-                resource: storage_buffer.binding().unwrap(),
+                resource: buffer.as_entire_binding(),
             }],
         });
 
-        Ok(FireMaterialGpu { bind_group })
+        Ok(FireMaterialGpu { bind_group, buffer })
     }
 }

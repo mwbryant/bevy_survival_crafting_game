@@ -5,18 +5,19 @@ struct VertexOutput {
     [[location(2)]] uv: vec2<f32>;
 };
 
+let MAX_FIRES = 64;
+
 struct Fire {
     position: vec2<f32>;
     strength: f32;
-    test: f32;
 };
 
 struct Fires {
-    fires: array<Fire>;
+    fires: array<Fire,MAX_FIRES>;
 };
 
 [[group(1), binding(0)]]
-var<storage> fires: Fires;
+var<uniform> fires: Fires;
 
 fn circle(st: vec2<f32>, center: vec2<f32>, radius: f32) -> f32{
     let dist = st-center;
@@ -28,8 +29,7 @@ fn circle(st: vec2<f32>, center: vec2<f32>, radius: f32) -> f32{
 [[stage(fragment)]]
 fn fragment(in: VertexOutput) -> [[location(0)]]vec4<f32> {
     var color = vec4<f32>(0.0,0.0,0.0, 0.99);
-    let num_fires: u32 = arrayLength(&fires.fires);
-    for( var i: i32 = 0; i < i32(num_fires); i= i +1) {
+    for( var i: i32 = 0; i < MAX_FIRES; i= i +1) {
         color = color * (1.0-circle(in.world_position.xy, fires.fires[i].position, fires.fires[i].strength ));
     }
     return color;
