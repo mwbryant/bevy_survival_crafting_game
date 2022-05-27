@@ -24,3 +24,6 @@ pub use error::{GameError, GameErrorType};
 
 use crate::fire_graphics;
 pub use fire_graphics::FireGraphicsPlugin;
+
+use crate::inventory_ui;
+pub use inventory_ui::InventoryUIPlugin;

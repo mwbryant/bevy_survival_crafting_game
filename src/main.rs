@@ -10,16 +10,18 @@ mod error;
 mod fire_graphics;
 mod game_camera;
 mod inventory;
+mod inventory_ui;
 mod item;
 mod mouse;
 mod player;
 mod prelude;
 
+use kayak_ui::bevy::BevyKayakUIPlugin;
 use mouse::MousePlugin;
 // todo implement `PluginGroup`
 use prelude::{
     CraftingPlugin, FireGraphicsPlugin, GameAssetsPlugin, GameCameraPlugin, InventoryPlugin,
-    ItemsPlugin, PlayerPlugin,
+    InventoryUIPlugin, ItemsPlugin, PlayerPlugin,
 };
 
 pub const HEIGHT: f32 = 900.;
@@ -42,13 +44,15 @@ fn main() {
             ..Default::default()
         })
         .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(GameCameraPlugin)
+        .add_plugin(BevyKayakUIPlugin)
         .add_plugin(GameAssetsPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(MousePlugin)
         .add_plugin(ItemsPlugin)
         .add_plugin(InventoryPlugin)
         .add_plugin(CraftingPlugin)
-        .add_plugin(GameCameraPlugin)
         .add_plugin(FireGraphicsPlugin)
+        .add_plugin(InventoryUIPlugin)
         .run();
 }

@@ -37,10 +37,10 @@ impl Plugin for CraftingPlugin {
         });
 
         app.insert_resource(crafting_book)
-            .add_startup_system(Self::spawn_crafting_ui)
-            .add_system(Self::crafting_ui_graying)
+            //.add_startup_system(Self::spawn_crafting_ui)
+            //.add_system(Self::crafting_ui_active)
+            //.add_system(Self::crafting_ui_graying)
             .add_system(Self::test_crafting)
-            .add_system(Self::crafting_ui_active)
             .register_inspectable::<CraftingBox>();
     }
 }

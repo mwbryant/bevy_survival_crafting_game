@@ -33,8 +33,8 @@ pub struct InventoryOverflow(pub usize);
 
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(update_inventory_ui)
-            .add_startup_system(spawn_inventory_ui)
+        app //.add_system(update_inventory_ui)
+            //.add_startup_system(spawn_inventory_ui)
             .register_inspectable::<Inventory>();
     }
 }

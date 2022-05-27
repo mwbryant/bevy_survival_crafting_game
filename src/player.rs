@@ -10,11 +10,11 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(Self::spawn_player)
-            .add_startup_system(Self::spawn_hand_ui)
+            //.add_startup_system(Self::spawn_hand_ui)
             .add_system(Self::player_movement)
             .add_system(Self::player_pickup)
             .add_system(Self::player_equip)
-            .add_system(Self::update_hand_ui)
+            //.add_system(Self::update_hand_ui)
             .register_inspectable::<Hands>()
             .register_inspectable::<Player>();
     }
