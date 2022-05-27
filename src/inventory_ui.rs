@@ -17,7 +17,7 @@ fn ShowTextbox() {
 
     let text_style = Style {
         top: StyleProp::Value(Units::Pixels(10.0)),
-        //color: StyleProp::Value(Color::new(1., 0., 0., 1.)),
+        color: StyleProp::Value(Color::new(1., 0., 0., 1.)),
         ..Default::default()
     };
 
