@@ -5,6 +5,8 @@ use kayak_ui::{
     widgets::{App, Window},
 };
 
+use crate::prelude::InventoryUI;
+
 pub struct GameUIPlugin;
 
 #[widget]
@@ -12,6 +14,7 @@ fn GameUI() {
     rsx! {
         <>
             <Window position={(0., 0.)} size={(100., 500.)} title={"Inventory Window".to_string()}>
+                <InventoryUI />
             </Window>
             <Window position={(1600. / 2. - 200., 900. - 100.)} size={(400., 100.)} title={"Item Slots Window".to_string()}>
             </Window>
@@ -44,9 +47,6 @@ fn setup_game_ui(
 impl Plugin for GameUIPlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.add_plugin(BevyKayakUIPlugin)
-            .add_startup_system_to_stage(
-                StartupStage::PreStartup,
-                setup_game_ui.label("kayak game ui"),
-            );
+            .add_startup_system(setup_game_ui.label("kayak game ui"));
     }
 }

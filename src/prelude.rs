@@ -26,7 +26,7 @@ use crate::fire_graphics;
 pub use fire_graphics::FireGraphicsPlugin;
 
 use crate::inventory_ui;
-pub use inventory_ui::InventoryUIPlugin;
+pub use inventory_ui::InventoryUI;
 
 use crate::game_ui;
 pub use game_ui::GameUIPlugin;

@@ -1,59 +1,45 @@
-use bevy::prelude::*;
 use kayak_ui::{
-    bevy::{BevyContext, FontMapping, UICameraBundle},
     core::{
-        render, rsx,
+        constructor, rsx,
         styles::{Style, StyleProp, Units},
-        use_state, widget, Color, Index,
+        use_state, widget, Color, VecTracker, WidgetProps,
     },
-    widgets::{App, TextBox, Window},
+    widgets::TextBox,
 };
 
-pub struct InventoryUIPlugin;
+#[derive(Default, Debug, WidgetProps, Clone, PartialEq)]
+pub struct ItemProps {
+    pub name: String,
+}
 
 #[widget]
-fn ShowTextbox() {
-    let (value, _, _) = use_state!("Hello World!".to_string());
+pub fn InventoryItem(props: ItemProps) {
+    let (item_name, _, _) = use_state!(props.name.clone());
 
     let text_style = Style {
         top: StyleProp::Value(Units::Pixels(10.0)),
+        left: StyleProp::Value(Units::Pixels(10.0)),
+        width: StyleProp::Value(Units::Pixels(70.0)),
+        height: StyleProp::Value(Units::Pixels(70.0)),
         color: StyleProp::Value(Color::new(1., 0., 0., 1.)),
         ..Default::default()
     };
 
     rsx! {
-        <Window position={(0., 0.)} size={(100., 100.)} title={"Example".to_string()}>
-            <TextBox styles={Some(text_style)} value={value} />
-        </Window>
+        <TextBox styles={Some(text_style)} value={item_name} />
     }
 }
 
-fn setup_inventory_ui(
-    mut commands: Commands,
-    mut font_mapping: ResMut<FontMapping>,
-    asset_server: Res<AssetServer>,
-) {
-    commands.spawn_bundle(UICameraBundle::new());
-    info!("Kayak: UI Camera Bundle spawned");
-    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
-
-    let context = BevyContext::new(|context| {
-        render! {
-            <App>
-                <ShowTextbox />
-            </App>
-        }
-    });
-
-    commands.insert_resource(context);
-    info!("Kayak: context resource inserted");
-}
-
-impl Plugin for InventoryUIPlugin {
-    fn build(&self, app: &mut bevy::app::App) {
-        app.add_startup_system_to_stage(
-            StartupStage::PreStartup,
-            setup_inventory_ui.label("kayak inventory ui"),
-        );
+#[widget]
+pub fn InventoryUI() {
+    let items = vec!["Item 1", "Item 2", "Item 3"];
+    rsx! {
+        <>
+        {VecTracker::from(items.iter().map(|item| {
+            constructor! {
+                <InventoryItem name={item.clone().to_string()}/>
+            }
+        }))}
+        </>
     }
 }
