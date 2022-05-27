@@ -36,7 +36,7 @@ impl Plugin for GameCameraPlugin {
 
 impl GameCameraPlugin {
     fn spawn_camera(mut commands: Commands) {
-        commands.spawn_bundle(UiCameraBundle::default());
+        //commands.spawn_bundle(UiCameraBundle::default());
 
         let mut camera = OrthographicCameraBundle::new_2d();
 
@@ -48,6 +48,7 @@ impl GameCameraPlugin {
         camera.orthographic_projection.scaling_mode = ScalingMode::None;
 
         commands.spawn_bundle(camera);
+        info!("camera spawned")
     }
 
     fn camera_follow(
@@ -58,7 +59,7 @@ impl GameCameraPlugin {
         for (mut transform, follow) in follower_query.iter_mut() {
             transform.translation.x = camera_translation.x;
             transform.translation.y = camera_translation.y;
-            transform.translation.z = 999.9 + follow.offset;
+            transform.translation.z = 800. + follow.offset;
         }
     }
 
