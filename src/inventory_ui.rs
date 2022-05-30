@@ -3,9 +3,9 @@ use kayak_ui::{
     core::{
         constructor, rsx,
         styles::{Style, StyleProp, Units},
-        use_state, widget, Binding, Bound, Color, VecTracker, WidgetProps,
+        use_state, widget, Binding, Bound, Color, EventType, OnEvent, VecTracker, WidgetProps,
     },
-    widgets::TextBox,
+    widgets::{Button, Text, TextBox},
 };
 
 use crate::game_ui::UIItems;
@@ -26,8 +26,20 @@ pub fn InventoryItem(props: ItemProps) {
         ..Default::default()
     };
 
+    let on_click_event = OnEvent::new(move |_, event| match event.event_type {
+        EventType::Click(..) => {
+            println!("klick!");
+        }
+        _ => {}
+    });
+    let item_name = props.name.clone();
     rsx! {
-        <TextBox styles={Some(text_style)} value={props.name.clone()} />
+        <>
+            <TextBox styles={Some(text_style)} value={item_name} />
+            <Button on_event={Some(on_click_event)}>
+                <Text content={"Klick".to_string()} />
+            </Button>
+        </>
     }
 }
 

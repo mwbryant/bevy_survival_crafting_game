@@ -62,6 +62,7 @@ fn setup_game_ui(
 impl Plugin for GameUIPlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.add_plugin(BevyKayakUIPlugin)
-            .add_startup_system(setup_game_ui.label("kayak game ui"));
+            .add_startup_system(setup_game_ui.label("kayak game ui"))
+            .add_event::<UIEvent>();
     }
 }
