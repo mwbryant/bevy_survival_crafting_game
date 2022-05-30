@@ -1,7 +1,8 @@
-use crate::inventory::InventoryBox;
+use crate::{game_ui::UIItems, inventory::InventoryBox};
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use kayak_ui::core::{Binding, MutableBound};
 
 use crate::prelude::*;
 
@@ -15,6 +16,7 @@ impl Plugin for PlayerPlugin {
             .add_system(Self::player_pickup)
             .add_system(Self::player_equip)
             //.add_system(Self::update_hand_ui)
+            .add_system(Self::update_inventory_ui)
             .register_inspectable::<Hands>()
             .register_inspectable::<Player>();
     }
@@ -73,6 +75,19 @@ impl PlayerPlugin {
                     hands.tool = Some(tool);
                 }
             }
+        }
+    }
+
+    fn update_inventory_ui(
+        inventory_query: Query<(&Inventory, &Hands), (Changed<Inventory>, With<Player>)>,
+        ui_items: Res<Binding<UIItems>>,
+    ) {
+        if let Ok((inventory, hands)) = inventory_query.get_single() {
+            let mut items_rep = inventory.get_ui_representation();
+            items_rep.hand_item = hands.tool.map(|tool| ItemProps {
+                name: format!("{:?}", tool),
+            });
+            ui_items.set(items_rep);
         }
     }
 
@@ -213,7 +228,9 @@ impl PlayerPlugin {
                 arm_length: 1.0,
             })
             .insert(Inventory::default())
-            .insert(Hands::default())
+            .insert(Hands {
+                tool: Some(Tool::Axe),
+            })
             .insert(Name::new("Player"));
     }
 

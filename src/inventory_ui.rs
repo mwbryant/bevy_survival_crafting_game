@@ -1,11 +1,14 @@
+use bevy::prelude::{info, Res};
 use kayak_ui::{
     core::{
         constructor, rsx,
         styles::{Style, StyleProp, Units},
-        use_state, widget, Color, VecTracker, WidgetProps,
+        use_state, widget, Binding, Bound, Color, VecTracker, WidgetProps,
     },
     widgets::TextBox,
 };
+
+use crate::game_ui::UIItems;
 
 #[derive(Default, Debug, WidgetProps, Clone, PartialEq)]
 pub struct ItemProps {
@@ -14,32 +17,51 @@ pub struct ItemProps {
 
 #[widget]
 pub fn InventoryItem(props: ItemProps) {
-    let (item_name, _, _) = use_state!(props.name.clone());
-
     let text_style = Style {
         top: StyleProp::Value(Units::Pixels(10.0)),
         left: StyleProp::Value(Units::Pixels(10.0)),
         width: StyleProp::Value(Units::Pixels(70.0)),
-        height: StyleProp::Value(Units::Pixels(70.0)),
+        height: StyleProp::Value(Units::Pixels(20.0)),
         color: StyleProp::Value(Color::new(1., 0., 0., 1.)),
         ..Default::default()
     };
 
     rsx! {
-        <TextBox styles={Some(text_style)} value={item_name} />
+        <TextBox styles={Some(text_style)} value={props.name.clone()} />
     }
 }
 
 #[widget]
 pub fn InventoryUI() {
-    let items = vec!["Item 1", "Item 2", "Item 3"];
+    let ui_items =
+        context.query_world::<Res<Binding<UIItems>>, _, _>(move |ui_items| ui_items.clone());
+
+    context.bind(&ui_items);
+
+    let ii = ui_items.get().inventory_items;
     rsx! {
         <>
-        {VecTracker::from(items.iter().map(|item| {
+        {VecTracker::from(ii.iter().map(|item| {
             constructor! {
-                <InventoryItem name={item.clone().to_string()}/>
+                <InventoryItem name={item.name.clone().to_string()}/>
             }
         }))}
         </>
+    }
+}
+
+#[widget]
+pub fn HandUI() {
+    let ui_items =
+        context.query_world::<Res<Binding<UIItems>>, _, _>(move |ui_items| ui_items.clone());
+
+    context.bind(&ui_items);
+
+    let hand_item = ui_items.get().hand_item.unwrap_or(ItemProps {
+        name: "Empty".to_string(),
+    });
+
+    rsx! {
+        <InventoryItem name={hand_item.name}/>
     }
 }

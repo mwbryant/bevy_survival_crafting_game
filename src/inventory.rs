@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::{
+    game_ui::UIItems,
     item::{ItemAndCount, WorldObject},
     prelude::*,
 };
@@ -112,6 +113,21 @@ impl Inventory {
     pub fn can_remove(&mut self, item_and_count: &ItemAndCount) -> bool {
         let mut inventory_clone = self.clone();
         matches!(inventory_clone.remove(item_and_count), Ok(()))
+    }
+
+    pub fn get_ui_representation(&self) -> UIItems {
+        let item_props = self
+            .items
+            .iter()
+            .filter(|item| item.item != ItemType::None)
+            .map(|item| ItemProps {
+                name: format!("{:?} x{}", item.item, item.count),
+            })
+            .collect();
+        UIItems {
+            inventory_items: item_props,
+            ..Default::default()
+        }
     }
 }
 

@@ -1,13 +1,19 @@
+use crate::prelude::{HandUI, InventoryUI, ItemProps};
 use bevy::prelude::*;
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
-    core::{render, rsx, widget, Index},
+    core::{bind, render, rsx, widget, Index},
     widgets::{App, Window},
 };
 
-use crate::prelude::InventoryUI;
-
 pub struct GameUIPlugin;
+
+#[derive(Default, Debug, Clone, PartialEq)]
+pub struct UIItems {
+    pub inventory_items: Vec<ItemProps>,
+    pub slot_items: Vec<ItemProps>,
+    pub hand_item: Option<ItemProps>,
+}
 
 #[widget]
 fn GameUI() {
@@ -19,6 +25,7 @@ fn GameUI() {
             <Window position={(1600. / 2. - 200., 900. - 100.)} size={(400., 100.)} title={"Item Slots Window".to_string()}>
             </Window>
             <Window position={(1600. - 200., 900. - 100.)} size={(200., 100.)} title={"Hand Slot Window".to_string()}>
+                <HandUI />
             </Window>
         </>
     }
@@ -31,6 +38,8 @@ fn setup_game_ui(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+
+    commands.insert_resource(bind(UIItems::default()));
 
     let context = BevyContext::new(|context| {
         render! {
