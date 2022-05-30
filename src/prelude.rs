@@ -29,4 +29,4 @@ use crate::inventory_ui;
 pub use inventory_ui::{HandUI, InventoryUI, ItemProps};
 
 use crate::game_ui;
-pub use game_ui::GameUIPlugin;
+pub use game_ui::{GameUIPlugin, UIEvent, UIEventType};

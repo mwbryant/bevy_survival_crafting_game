@@ -8,6 +8,12 @@ use kayak_ui::{
 
 pub struct GameUIPlugin;
 
+pub struct UIEvent(UIEventType);
+
+pub enum UIEventType {
+    CraftEvent(String),
+}
+
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct UIItems {
     pub inventory_items: Vec<ItemProps>,

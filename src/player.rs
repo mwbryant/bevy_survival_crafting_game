@@ -79,7 +79,10 @@ impl PlayerPlugin {
     }
 
     fn update_inventory_ui(
-        inventory_query: Query<(&Inventory, &Hands), (Changed<Inventory>, With<Player>)>,
+        inventory_query: Query<
+            (&Inventory, &Hands),
+            (Or<(Changed<Inventory>, Changed<Hands>)>, With<Player>),
+        >,
         ui_items: Res<Binding<UIItems>>,
     ) {
         if let Ok((inventory, hands)) = inventory_query.get_single() {
