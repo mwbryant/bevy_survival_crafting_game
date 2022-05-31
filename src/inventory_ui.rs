@@ -67,13 +67,13 @@ pub fn InventoryUI() {
 
     let ii = ui_items.get().inventory_items;
     rsx! {
-        <>
+        <Element>
         {VecTracker::from(ii.iter().map(|item| {
             constructor! {
                 <InventoryItem name={item.name.clone().to_string()}/>
             }
         }))}
-        </>
+        </Element>
     }
 }
 
