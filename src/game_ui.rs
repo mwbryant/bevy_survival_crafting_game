@@ -1,4 +1,4 @@
-use crate::prelude::{HandUI, InventoryUI, ItemProps};
+use crate::prelude::{HandUI, InventoryUI, ItemProps, SlotUI};
 use bevy::prelude::*;
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
@@ -8,10 +8,20 @@ use kayak_ui::{
 
 pub struct GameUIPlugin;
 
-pub struct UIEvent(UIEventType);
+#[derive(Debug)]
+pub struct UIEvent(pub UIEventType);
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum UIEventType {
+    None,
     CraftEvent(String),
+    ToolEvent(String),
+}
+
+impl Default for UIEventType {
+    fn default() -> Self {
+        UIEventType::None
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -25,12 +35,13 @@ pub struct UIItems {
 fn GameUI() {
     rsx! {
         <>
-            <Window position={(0., 0.)} size={(100., 500.)} title={"Inventory Window".to_string()}>
+            <Window position={(0., 0.)} size={(100., 500.)} title={"Inventory".to_string()}>
                 <InventoryUI />
             </Window>
-            <Window position={(1600. / 2. - 200., 900. - 100.)} size={(400., 100.)} title={"Item Slots Window".to_string()}>
+            <Window position={(1600. / 2. - 200., 900. - 100.)} size={(400., 100.)} title={"Item Slots".to_string()}>
+                <SlotUI />
             </Window>
-            <Window position={(1600. - 200., 900. - 100.)} size={(200., 100.)} title={"Hand Slot Window".to_string()}>
+            <Window position={(1600. - 200., 900. - 100.)} size={(200., 100.)} title={"Hand Slot".to_string()} >
                 <HandUI />
             </Window>
         </>
@@ -59,10 +70,17 @@ fn setup_game_ui(
     info!("game ui initialized");
 }
 
+fn read_game_ui_events(mut event_reader: EventReader<UIEvent>) {
+    for ev in event_reader.iter() {
+        info!("{:?}", ev);
+    }
+}
+
 impl Plugin for GameUIPlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.add_plugin(BevyKayakUIPlugin)
             .add_startup_system(setup_game_ui.label("kayak game ui"))
-            .add_event::<UIEvent>();
+            .add_event::<UIEvent>()
+            .add_system(read_game_ui_events);
     }
 }

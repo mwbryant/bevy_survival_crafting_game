@@ -1,4 +1,4 @@
-use crate::{game_ui::UIItems, inventory::InventoryBox};
+use crate::{crafting::CraftingBook, game_ui::UIItems, inventory::InventoryBox};
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
@@ -11,11 +11,9 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(Self::spawn_player)
-            //.add_startup_system(Self::spawn_hand_ui)
             .add_system(Self::player_movement)
             .add_system(Self::player_pickup)
             .add_system(Self::player_equip)
-            //.add_system(Self::update_hand_ui)
             .add_system(Self::update_inventory_ui)
             .register_inspectable::<Hands>()
             .register_inspectable::<Player>();
@@ -78,18 +76,41 @@ impl PlayerPlugin {
         }
     }
 
+    // TODO: Move that function to a more appropiate place
     fn update_inventory_ui(
         inventory_query: Query<
             (&Inventory, &Hands),
             (Or<(Changed<Inventory>, Changed<Hands>)>, With<Player>),
         >,
+        crafting_book: Res<CraftingBook>,
         ui_items: Res<Binding<UIItems>>,
     ) {
         if let Ok((inventory, hands)) = inventory_query.get_single() {
+            // get inventory items for ui
             let mut items_rep = inventory.get_ui_representation();
+
+            // get hand item for ui
             items_rep.hand_item = hands.tool.map(|tool| ItemProps {
                 name: format!("{:?}", tool),
+                event_type: UIEventType::ToolEvent(format!("{:?}", tool)),
+                styles: None,
+                disabled: false,
             });
+
+            // get crafting items for ui
+            let recipe_item_props: Vec<ItemProps> = crafting_book
+                .recipes
+                .iter()
+                .map(|r| ItemProps {
+                    name: r.produces.name(),
+                    event_type: UIEventType::CraftEvent(r.produces.name()),
+                    styles: None,
+                    disabled: false,
+                })
+                .collect();
+            items_rep.slot_items = recipe_item_props;
+
+            // update ui by updating binding object
             ui_items.set(items_rep);
         }
     }
@@ -140,7 +161,7 @@ impl PlayerPlugin {
                     item: pickup.item,
                     count: 1,
                 };
-                if inventory.can_add(pickup_and_count) {
+                if inventory.can_add(&pickup_and_count) {
                     inventory.add(&pickup_and_count);
                     commands.entity(ent).despawn_recursive();
                 } else {
@@ -152,7 +173,7 @@ impl PlayerPlugin {
                     item: harvest.item,
                     count: 1,
                 };
-                if inventory.can_add(harvest_and_count) {
+                if inventory.can_add(&harvest_and_count) {
                     if hands.tool == harvest.tool_required || harvest.tool_required.is_none() {
                         inventory.add(&harvest_and_count);
                         commands.entity(ent).despawn_recursive();
@@ -194,24 +215,6 @@ impl PlayerPlugin {
         }
     }
 
-    fn update_hand_ui(
-        graphics: Res<Graphics>,
-        mut hands_box: Query<(&mut Visibility, &mut TextureAtlasSprite), With<HandsBox>>,
-        hands: Query<&Hands>,
-    ) {
-        let (mut visible, mut sprite) = hands_box.single_mut();
-        let hands = hands.single();
-        match hands.tool {
-            Some(tool) => {
-                visible.is_visible = true;
-                *sprite = graphics.item_map[&WorldObject::Item(ItemType::Tool(tool))].clone();
-            }
-            None => {
-                visible.is_visible = false;
-            }
-        }
-    }
-
     fn spawn_player(mut commands: Commands, graphics: Res<Graphics>) {
         let mut sprite = TextureAtlasSprite::new(graphics.player_index);
         sprite.custom_size = Some(Vec2::splat(1.));
@@ -235,45 +238,5 @@ impl PlayerPlugin {
                 tool: Some(Tool::Axe),
             })
             .insert(Name::new("Player"));
-    }
-
-    fn spawn_hand_ui(mut commands: Commands, graphics: Res<Graphics>) {
-        let mut sprite = TextureAtlasSprite::new(graphics.box_index);
-        sprite.custom_size = Some(Vec2::splat(1.));
-
-        let hand_graphic = commands
-            .spawn_bundle(SpriteSheetBundle {
-                sprite: sprite,
-                texture_atlas: graphics.texture_atlas.clone(),
-                transform: Transform {
-                    translation: Vec3::ZERO,
-                    ..Default::default()
-                },
-                visibility: Visibility { is_visible: false },
-                ..default()
-            })
-            .insert(HandsBox)
-            .id();
-
-        let mut sprite = TextureAtlasSprite::new(graphics.box_index);
-        sprite.custom_size = Some(Vec2::splat(1.));
-        let ui_box = commands
-            .spawn_bundle(SpriteSheetBundle {
-                sprite: sprite,
-                texture_atlas: graphics.texture_atlas.clone(),
-                transform: Transform {
-                    translation: Vec3::new(7.0, -4.0, -1.0),
-                    ..Default::default()
-                },
-                ..Default::default()
-            })
-            .add_child(hand_graphic)
-            .id();
-
-        commands
-            .spawn_bundle(TransformBundle::default())
-            .insert(CameraFollower::default())
-            .insert(Name::new("Hand UI"))
-            .add_child(ui_box);
     }
 }

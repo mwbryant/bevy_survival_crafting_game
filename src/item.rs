@@ -45,6 +45,15 @@ pub enum ItemType {
     Fire,
 }
 
+impl ItemType {
+    pub fn name(self) -> String {
+        match self {
+            ItemType::Tool(tool) => format!("{:?}", tool),
+            _ => format!("{:?}", self),
+        }
+    }
+}
+
 impl WorldObject {
     pub fn spawn(self, commands: &mut Commands, graphics: &Graphics, position: Vec2) -> Entity {
         let sprite = graphics
