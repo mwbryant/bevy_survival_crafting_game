@@ -110,8 +110,8 @@ impl Inventory {
             .iter()
             .filter(|item| item.item != ItemType::None)
             .map(|item| ItemProps {
-                name: format!("{:?} x{}", item.item, item.count),
-                event_type: UIEventType::None,
+                name: format!("{} x{}", item.item.name(), item.count),
+                event_type: UIEventType::InventoryEvent(item.item.name()),
                 styles: None,
                 disabled: false,
             })

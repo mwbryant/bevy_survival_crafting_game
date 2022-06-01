@@ -2,14 +2,14 @@ use bevy::prelude::{EventWriter, Res};
 use kayak_ui::{
     core::{
         constructor, rsx,
-        styles::{LayoutType, Style, StyleProp, Units},
+        styles::{Edge, Style, StyleProp, Units},
         use_state, widget, Binding, Bound, Color, EventType, OnEvent, VecTracker, WidgetProps,
     },
     widgets::{Button, Element, Text},
 };
 
 use crate::{
-    game_ui::UIItems,
+    game_ui::{UIItems, UIProps},
     prelude::{UIEvent, UIEventType},
 };
 
@@ -25,11 +25,10 @@ pub struct ItemProps {
 #[widget]
 pub fn InventoryItem(props: ItemProps) {
     let button_style = Style {
-        top: StyleProp::Value(Units::Pixels(10.0)),
-        left: StyleProp::Value(Units::Pixels(10.0)),
-        width: StyleProp::Value(Units::Pixels(50.0)),
-        height: StyleProp::Value(Units::Pixels(30.0)),
+        width: StyleProp::Value(Units::Pixels(70.0)),
+        height: StyleProp::Value(Units::Pixels(50.0)),
         color: StyleProp::Value(Color::new(1., 0., 0., 1.)),
+        padding: StyleProp::Value(Edge::all(Units::Stretch(1.0))),
         ..props.styles.clone().unwrap_or_default()
     };
 
@@ -59,7 +58,7 @@ pub fn InventoryItem(props: ItemProps) {
 }
 
 #[widget]
-pub fn InventoryUI() {
+pub fn InventoryUI(ui_props: UIProps) {
     let ui_items =
         context.query_world::<Res<Binding<UIItems>>, _, _>(move |ui_items| ui_items.clone());
 
@@ -67,7 +66,7 @@ pub fn InventoryUI() {
 
     let ii = ui_items.get().inventory_items;
     rsx! {
-        <Element>
+        <Element styles={ui_props.styles.clone()}>
         {VecTracker::from(ii.iter().map(|item| {
             constructor! {
                 <InventoryItem name={item.name.clone().to_string()}/>
@@ -78,7 +77,7 @@ pub fn InventoryUI() {
 }
 
 #[widget]
-pub fn HandUI() {
+pub fn HandUI(ui_props: UIProps) {
     let ui_items =
         context.query_world::<Res<Binding<UIItems>>, _, _>(move |ui_items| ui_items.clone());
 
@@ -91,32 +90,22 @@ pub fn HandUI() {
         disabled: false,
     });
 
-    let row_style = Style {
-        layout_type: StyleProp::Value(LayoutType::Row),
-        ..Default::default()
-    };
-
     rsx! {
-        <Element styles={Some(row_style)} >
+        <Element styles={ui_props.styles.clone()} >
             <InventoryItem name={hand_item.name.clone()} event_type={hand_item.event_type.clone()}/>
         </Element>
     }
 }
 
 #[widget]
-pub fn SlotUI() {
+pub fn RecipeUI(ui_props: UIProps) {
     let ui_items =
         context.query_world::<Res<Binding<UIItems>>, _, _>(move |ui_items| ui_items.clone());
     context.bind(&ui_items);
     let ii = ui_items.get().slot_items;
 
-    let row_style = Style {
-        layout_type: StyleProp::Value(LayoutType::Row),
-        ..Default::default()
-    };
-
     rsx! {
-        <Element styles={Some(row_style)}>
+        <Element styles={ui_props.styles.clone()}>
         {VecTracker::from(ii.iter().map(|item| {
             constructor! {
                 <InventoryItem name={item.name.clone().to_string()} event_type={item.event_type.clone()}/>

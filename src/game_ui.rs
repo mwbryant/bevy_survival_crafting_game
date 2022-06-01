@@ -1,8 +1,12 @@
-use crate::prelude::{HandUI, InventoryUI, ItemProps, SlotUI};
+use crate::prelude::{HandUI, InventoryUI, ItemProps, RecipeUI};
 use bevy::prelude::*;
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
-    core::{bind, render, rsx, widget, Index},
+    core::{
+        bind, render, rsx,
+        styles::{Edge, LayoutType, Style as KayakStyle, StyleProp, Units},
+        widget, Index, WidgetProps,
+    },
     widgets::{App, Window},
 };
 
@@ -16,6 +20,7 @@ pub enum UIEventType {
     None,
     CraftEvent(String),
     ToolEvent(String),
+    InventoryEvent(String),
 }
 
 impl Default for UIEventType {
@@ -31,18 +36,37 @@ pub struct UIItems {
     pub hand_item: Option<ItemProps>,
 }
 
+#[derive(Default, Debug, WidgetProps, Clone, PartialEq)]
+pub struct UIProps {
+    #[prop_field(Styles)]
+    pub styles: Option<KayakStyle>,
+}
+
 #[widget]
 fn GameUI() {
+    let row_style = KayakStyle {
+        layout_type: StyleProp::Value(LayoutType::Row),
+        padding: StyleProp::Value(Edge::all(Units::Stretch(1.0))),
+        col_between: StyleProp::Value(Units::Pixels(10.)),
+        ..Default::default()
+    };
+
+    let column_style = KayakStyle {
+        padding: StyleProp::Value(Edge::axis(Units::Pixels(10.), Units::Stretch(1.0))),
+        row_between: StyleProp::Value(Units::Pixels(10.)),
+        ..Default::default()
+    };
+
     rsx! {
         <>
             <Window position={(0., 0.)} size={(100., 500.)} title={"Inventory".to_string()}>
-                <InventoryUI />
+                <InventoryUI styles={Some(column_style)} />
             </Window>
-            <Window position={(1600. / 2. - 200., 900. - 100.)} size={(400., 100.)} title={"Item Slots".to_string()}>
-                <SlotUI />
+            <Window position={(1600. / 2. - 200., 900. - 100.)} size={(400., 100.)} title={"Recipes".to_string()}>
+                <RecipeUI styles={Some(row_style)} />
             </Window>
             <Window position={(1600. - 200., 900. - 100.)} size={(200., 100.)} title={"Hand Slot".to_string()} >
-                <HandUI />
+                <HandUI styles={Some(row_style)} />
             </Window>
         </>
     }
