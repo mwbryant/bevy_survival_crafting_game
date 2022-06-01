@@ -1,4 +1,7 @@
-use crate::prelude::{HandUI, InventoryUI, ItemProps, RecipeUI};
+use crate::{
+    item::{ItemAndCount, ItemType},
+    prelude::{HandUI, InventoryUI, RecipeUI},
+};
 use bevy::prelude::*;
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
@@ -18,9 +21,23 @@ pub struct UIEvent(pub UIEventType);
 #[derive(Debug, Clone, PartialEq)]
 pub enum UIEventType {
     None,
-    CraftEvent(String),
-    ToolEvent(String),
-    InventoryEvent(String),
+    CraftEvent(ItemAndCount),
+    ToolEvent(ItemAndCount),
+    InventoryEvent(ItemAndCount),
+}
+
+impl UIEventType {
+    pub fn item_and_count(self) -> ItemAndCount {
+        match self {
+            UIEventType::None => ItemAndCount {
+                item: ItemType::None,
+                count: 0,
+            },
+            UIEventType::CraftEvent(i)
+            | UIEventType::ToolEvent(i)
+            | UIEventType::InventoryEvent(i) => i,
+        }
+    }
 }
 
 impl Default for UIEventType {
@@ -31,9 +48,9 @@ impl Default for UIEventType {
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct UIItems {
-    pub inventory_items: Vec<ItemProps>,
-    pub slot_items: Vec<ItemProps>,
-    pub hand_item: Option<ItemProps>,
+    pub inventory_items: Vec<ItemAndCount>,
+    pub crafting_items: Vec<ItemAndCount>,
+    pub hand_item: Option<ItemAndCount>,
 }
 
 #[derive(Default, Debug, WidgetProps, Clone, PartialEq)]

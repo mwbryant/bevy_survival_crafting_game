@@ -5,7 +5,7 @@ use kayak_ui::{
         styles::{Edge, Style, StyleProp, Units},
         use_state, widget, Binding, Bound, Color, EventType, OnEvent, VecTracker, WidgetProps,
     },
-    widgets::{Button, Element, Text},
+    widgets::{Button, Element, If, Text},
 };
 
 use crate::{
@@ -15,7 +15,6 @@ use crate::{
 
 #[derive(Default, Debug, WidgetProps, Clone, PartialEq)]
 pub struct ItemProps {
-    pub name: String,
     pub event_type: UIEventType,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
@@ -23,7 +22,7 @@ pub struct ItemProps {
 }
 
 #[widget]
-pub fn InventoryItem(props: ItemProps) {
+pub fn Item(props: ItemProps) {
     let button_style = Style {
         width: StyleProp::Value(Units::Pixels(70.0)),
         height: StyleProp::Value(Units::Pixels(50.0)),
@@ -47,7 +46,11 @@ pub fn InventoryItem(props: ItemProps) {
         }
     });
 
-    let item_name = props.name.clone();
+    let item_name = format!(
+        "{} x{}",
+        props.clone().event_type.item_and_count().item.name(),
+        props.clone().event_type.item_and_count().count
+    );
     rsx! {
         <>
             <Button on_event={Some(on_click_event)} styles={Some(button_style)} disabled={props.disabled}>
@@ -69,7 +72,7 @@ pub fn InventoryUI(ui_props: UIProps) {
         <Element styles={ui_props.styles.clone()}>
         {VecTracker::from(ii.iter().map(|item| {
             constructor! {
-                <InventoryItem name={item.name.clone().to_string()}/>
+                <Item event_type={UIEventType::InventoryEvent(item.clone())}/>
             }
         }))}
         </Element>
@@ -83,16 +86,17 @@ pub fn HandUI(ui_props: UIProps) {
 
     context.bind(&ui_items);
 
-    let hand_item = ui_items.get().hand_item.unwrap_or(ItemProps {
-        name: "Empty".to_string(),
-        event_type: UIEventType::ToolEvent("Empty".to_string()),
-        styles: None,
-        disabled: false,
-    });
+    let hand_item = ui_items.get().hand_item;
+    // .unwrap_or(ItemAndCount {
+    //     item: ItemType::None,
+    //     count: 0,
+    // });
 
     rsx! {
         <Element styles={ui_props.styles.clone()} >
-            <InventoryItem name={hand_item.name.clone()} event_type={hand_item.event_type.clone()}/>
+            <If condition={hand_item.is_some()}>
+                <Item event_type={UIEventType::ToolEvent(hand_item.unwrap())}/>
+            </If>
         </Element>
     }
 }
@@ -102,13 +106,13 @@ pub fn RecipeUI(ui_props: UIProps) {
     let ui_items =
         context.query_world::<Res<Binding<UIItems>>, _, _>(move |ui_items| ui_items.clone());
     context.bind(&ui_items);
-    let ii = ui_items.get().slot_items;
+    let ii = ui_items.get().crafting_items;
 
     rsx! {
         <Element styles={ui_props.styles.clone()}>
         {VecTracker::from(ii.iter().map(|item| {
             constructor! {
-                <InventoryItem name={item.name.clone().to_string()} event_type={item.event_type.clone()}/>
+                <Item event_type={UIEventType::CraftEvent(item.clone())}/>
             }
         }))}
         </ Element>

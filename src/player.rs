@@ -1,8 +1,6 @@
-use crate::{crafting::CraftingBook, game_ui::UIItems, inventory::InventoryBox};
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
-use kayak_ui::core::{Binding, MutableBound};
 
 use crate::prelude::*;
 
@@ -13,8 +11,7 @@ impl Plugin for PlayerPlugin {
         app.add_startup_system(Self::spawn_player)
             .add_system(Self::player_movement)
             .add_system(Self::player_pickup)
-            .add_system(Self::player_equip)
-            .add_system(Self::update_inventory_ui)
+            .add_system(change_tool)
             .register_inspectable::<Hands>()
             .register_inspectable::<Player>();
     }
@@ -22,7 +19,7 @@ impl Plugin for PlayerPlugin {
 
 #[derive(Component, Inspectable, Default)]
 pub struct Hands {
-    tool: Option<Tool>,
+    pub tool: Option<Tool>,
 }
 #[derive(Component)]
 pub struct HandsBox;
@@ -34,87 +31,6 @@ pub struct Player {
 }
 
 impl PlayerPlugin {
-    fn player_equip(
-        mut player_query: Query<(&Player, &mut Inventory, &mut Hands)>,
-        inventory_boxes: Query<(&GlobalTransform, &InventoryBox)>,
-        mouse: Res<Input<MouseButton>>,
-        mouse_pos: Res<MousePosition>,
-    ) {
-        let (_, mut inventory, mut hands) = player_query.single_mut();
-        if mouse.just_pressed(MouseButton::Left) {
-            for (transform, inv_box) in inventory_boxes.iter() {
-                // 80% of the dimensions of the box, that's 0.4 in either direction
-                if !(mouse_pos.0.x > transform.translation.x - 0.4
-                    && mouse_pos.0.x < transform.translation.x + 0.4
-                    && mouse_pos.0.y > transform.translation.y - 0.4
-                    && mouse_pos.0.y < transform.translation.y + 0.4)
-                {
-                    continue;
-                }
-                if let ItemType::Tool(tool) = inventory.items[inv_box.slot].item {
-                    if let Err(error) = inventory.remove(&ItemAndCount {
-                        item: ItemType::Tool(tool),
-                        count: 1,
-                    }) {
-                        warn!("{:?}", error);
-                    };
-                    if let Some(tool) = hands.tool {
-                        if inventory
-                            .add(&ItemAndCount {
-                                item: ItemType::Tool(tool),
-                                count: 1,
-                            })
-                            .is_some()
-                        {
-                            //FIXME removing what was in hand might not be able to go back into inventory
-                            warn!("Item was lost! on unequip");
-                        }
-                    }
-                    hands.tool = Some(tool);
-                }
-            }
-        }
-    }
-
-    // TODO: Move that function to a more appropiate place
-    fn update_inventory_ui(
-        inventory_query: Query<
-            (&Inventory, &Hands),
-            (Or<(Changed<Inventory>, Changed<Hands>)>, With<Player>),
-        >,
-        crafting_book: Res<CraftingBook>,
-        ui_items: Res<Binding<UIItems>>,
-    ) {
-        if let Ok((inventory, hands)) = inventory_query.get_single() {
-            // get inventory items for ui
-            let mut items_rep = inventory.get_ui_representation();
-
-            // get hand item for ui
-            items_rep.hand_item = hands.tool.map(|tool| ItemProps {
-                name: format!("{:?}", tool),
-                event_type: UIEventType::ToolEvent(format!("{:?}", tool)),
-                styles: None,
-                disabled: false,
-            });
-
-            // get crafting items for ui
-            let recipe_item_props: Vec<ItemProps> = crafting_book
-                .recipes
-                .iter()
-                .map(|r| ItemProps {
-                    name: r.produces.name(),
-                    event_type: UIEventType::CraftEvent(r.produces.name()),
-                    styles: None,
-                    disabled: false,
-                })
-                .collect();
-            items_rep.slot_items = recipe_item_props;
-
-            // update ui by updating binding object
-            ui_items.set(items_rep);
-        }
-    }
-
     //XXX is this better to be 2 systems... its a bit much
     fn player_pickup(
         mut commands: Commands,
@@ -234,9 +150,50 @@ impl PlayerPlugin {
                 arm_length: 1.0,
             })
             .insert(Inventory::default())
-            .insert(Hands {
-                tool: Some(Tool::Axe),
-            })
+            .insert(Hands { tool: None })
             .insert(Name::new("Player"));
     }
+}
+
+pub fn change_tool(
+    mut event_reader: EventReader<UIEvent>,
+    mut query: Query<(&mut Inventory, &mut Hands), With<Player>>,
+) {
+    let mut opt_tool: Option<Tool> = None;
+    for ev in event_reader.iter() {
+        match ev.0.clone() {
+            UIEventType::InventoryEvent(item) => {
+                opt_tool = match item.item {
+                    ItemType::Tool(t) => Some(t),
+                    _ => None,
+                };
+            }
+            _ => {}
+        };
+    }
+
+    if opt_tool.is_none() {
+        return;
+    };
+
+    let (mut inventory, mut hands) = query.single_mut();
+    if hands.tool.is_some() {
+        if !inventory.can_add(&ItemAndCount {
+            item: ItemType::Tool(hands.tool.unwrap()),
+            count: 1,
+        }) {
+            return;
+        };
+        inventory.add(&ItemAndCount {
+            item: ItemType::Tool(hands.tool.unwrap()),
+            count: 1,
+        });
+    }
+
+    hands.tool = opt_tool;
+    let result = inventory.remove(&ItemAndCount {
+        item: ItemType::Tool(opt_tool.unwrap()),
+        count: 1,
+    });
+    info!("{:?}", result);
 }

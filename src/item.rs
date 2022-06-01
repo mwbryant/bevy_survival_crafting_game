@@ -269,7 +269,7 @@ impl Default for ItemType {
     }
 }
 
-#[derive(Clone, Copy, Default, Inspectable, Deserialize)]
+#[derive(Clone, Copy, Default, Inspectable, Deserialize, Debug, PartialEq)]
 pub struct ItemAndCount {
     pub item: ItemType,
     pub count: usize,

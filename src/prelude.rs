@@ -25,8 +25,8 @@ pub use error::{GameError, GameErrorType};
 use crate::fire_graphics;
 pub use fire_graphics::FireGraphicsPlugin;
 
-use crate::inventory_ui;
-pub use inventory_ui::{HandUI, InventoryUI, ItemProps, RecipeUI};
+use crate::game_ui_widgets;
+pub use game_ui_widgets::{HandUI, InventoryUI, ItemProps, RecipeUI};
 
 use crate::game_ui;
 pub use game_ui::{GameUIPlugin, UIEvent, UIEventType, UIProps};

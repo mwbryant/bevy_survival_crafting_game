@@ -58,7 +58,7 @@ impl CraftingPlugin {
                     let recipe_to_craft = crafting_book
                         .recipes
                         .iter()
-                        .filter(|recipe| recipe.produces.name() == item)
+                        .filter(|recipe| recipe.produces == item.item)
                         .collect::<Vec<&CraftingRecipe>>()[0];
 
                     // make sure inventory has ingredients and space to store new item

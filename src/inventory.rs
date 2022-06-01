@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use kayak_ui::core::{Binding, MutableBound};
 
-use crate::{game_ui::UIItems, item::ItemAndCount, prelude::*};
+use crate::{
+    crafting::CraftingBook, game_ui::UIItems, item::ItemAndCount, player::Hands, prelude::*,
+};
 
 pub const INVENTORY_SIZE: usize = 3;
 pub const INVENTORY_ITEM_SIZE: usize = 5;
@@ -25,7 +28,8 @@ pub struct InventoryOverflow(pub usize);
 
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
-        app.register_inspectable::<Inventory>();
+        app.add_system(update_inventory_ui)
+            .register_inspectable::<Inventory>();
     }
 }
 
@@ -103,22 +107,46 @@ impl Inventory {
         let mut inventory_clone = self.clone();
         matches!(inventory_clone.remove(item_and_count), Ok(()))
     }
+}
 
-    pub fn get_ui_representation(&self) -> UIItems {
-        let item_props = self
+fn update_inventory_ui(
+    inventory_query: Query<
+        (&Inventory, &Hands),
+        (Or<(Changed<Inventory>, Changed<Hands>)>, With<Player>),
+    >,
+    crafting_book: Res<CraftingBook>,
+    ui_items: Res<Binding<UIItems>>,
+) {
+    if let Ok((inventory, hands)) = inventory_query.get_single() {
+        // get inventory items for ui
+        let inventory_items = inventory
             .items
+            .to_vec()
+            .into_iter()
+            .filter(|ic| ic.item != ItemType::None)
+            .collect();
+
+        // get hand item for ui
+        let hand_item = hands.tool.map(|tool| ItemAndCount {
+            item: ItemType::Tool(tool),
+            count: 1,
+        });
+
+        // get crafting items for ui
+        let crafting_items = crafting_book
+            .recipes
             .iter()
-            .filter(|item| item.item != ItemType::None)
-            .map(|item| ItemProps {
-                name: format!("{} x{}", item.item.name(), item.count),
-                event_type: UIEventType::InventoryEvent(item.item.name()),
-                styles: None,
-                disabled: false,
+            .map(|r| ItemAndCount {
+                item: r.produces,
+                count: 1,
             })
             .collect();
-        UIItems {
-            inventory_items: item_props,
-            ..Default::default()
-        }
+
+        // update ui by updating binding object
+        ui_items.set(UIItems {
+            inventory_items,
+            hand_item,
+            crafting_items,
+        });
     }
 }
