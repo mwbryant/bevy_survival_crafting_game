@@ -2,6 +2,7 @@
 #![allow(clippy::expect_fun_call)]
 #![allow(clippy::type_complexity)]
 use bevy::{prelude::*, window::PresentMode};
+use bevy_asset_loader::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
 
 mod assets;
@@ -27,8 +28,26 @@ use prelude::{
 pub const HEIGHT: f32 = 900.;
 pub const RESOLUTION: f32 = 16.0 / 9.0;
 
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub enum GameState {
+    Splash,
+    Main,
+}
+
+//TODO move to assets.rs
+#[derive(AssetCollection)]
+struct ImageAssets {
+    #[asset(path = "bevy_survival_sprites.png")]
+    pub sprite_sheet: Handle<Image>,
+}
+
 fn main() {
-    App::new()
+    let mut app = App::new();
+    AssetLoader::new(GameState::Splash)
+        .continue_to_state(GameState::Main)
+        .with_collection::<ImageAssets>()
+        .build(&mut app);
+    app.add_state(GameState::Splash)
         .insert_resource(ClearColor(Color::hex("b0c060").unwrap()))
         .insert_resource(WindowDescriptor {
             width: HEIGHT * RESOLUTION,

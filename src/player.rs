@@ -2,18 +2,23 @@ use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::prelude::*;
+use crate::{prelude::*, GameState};
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(Self::spawn_player)
-            .add_system(Self::player_movement)
-            .add_system(Self::player_pickup)
-            .add_system(change_tool)
-            .register_inspectable::<Hands>()
-            .register_inspectable::<Player>();
+        app.add_system_set(
+            SystemSet::on_enter(GameState::Main).with_system(Self::spawn_player.after("graphics")),
+        )
+        .add_system_set(
+            SystemSet::on_update(GameState::Main)
+                .with_system(Self::player_movement)
+                .with_system(Self::player_pickup)
+                .with_system(change_tool),
+        )
+        .register_inspectable::<Hands>()
+        .register_inspectable::<Player>();
     }
 }
 

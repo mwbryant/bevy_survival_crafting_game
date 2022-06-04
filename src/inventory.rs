@@ -4,9 +4,10 @@ use kayak_ui::core::{Binding, MutableBound};
 
 use crate::{
     crafting::CraftingBook, game_ui::UIItems, item::ItemAndCount, player::Hands, prelude::*,
+    GameState,
 };
 
-pub const INVENTORY_SIZE: usize = 3;
+pub const INVENTORY_SIZE: usize = 7;
 pub const INVENTORY_ITEM_SIZE: usize = 5;
 
 pub struct InventoryPlugin;
@@ -28,7 +29,7 @@ pub struct InventoryOverflow(pub usize);
 
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(update_inventory_ui)
+        app.add_system_set(SystemSet::on_update(GameState::Main).with_system(update_inventory_ui))
             .register_inspectable::<Inventory>();
     }
 }

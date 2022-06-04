@@ -1,6 +1,7 @@
 use crate::{
     item::{ItemAndCount, ItemType},
     prelude::{HandUI, InventoryUI, RecipeUI},
+    GameState,
 };
 use bevy::prelude::*;
 use kayak_ui::{
@@ -120,7 +121,8 @@ fn read_game_ui_events(mut event_reader: EventReader<UIEvent>) {
 impl Plugin for GameUIPlugin {
     fn build(&self, app: &mut bevy::app::App) {
         app.add_plugin(BevyKayakUIPlugin)
-            .add_startup_system(setup_game_ui.label("kayak game ui"))
+            .add_system_set(SystemSet::on_enter(GameState::Main).with_system(setup_game_ui))
+            //.add_startup_system(setup_game_ui.label("kayak game ui"))
             .add_event::<UIEvent>()
             .add_system(read_game_ui_events);
     }

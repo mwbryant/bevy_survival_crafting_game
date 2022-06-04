@@ -1,4 +1,4 @@
-use crate::prelude::Graphics;
+use crate::{prelude::Graphics, GameState};
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use serde::Deserialize;
@@ -166,9 +166,15 @@ pub struct ItemsPlugin;
 
 impl Plugin for ItemsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(Self::spawn_test_objects)
-            .add_system(Self::update_graphics)
-            .add_system(Self::world_object_growth);
+        app.add_system_set(
+            SystemSet::on_enter(GameState::Main)
+                .with_system(Self::spawn_test_objects.after("graphics")),
+        )
+        .add_system_set(
+            SystemSet::on_update(GameState::Main)
+                .with_system(Self::update_graphics)
+                .with_system(Self::world_object_growth),
+        );
         //FIXME I don't think this is working...
         if cfg!(debug_assertions) {
             app.register_type::<GrowthTimer>()

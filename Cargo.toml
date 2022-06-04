@@ -17,3 +17,4 @@ ron = "0.7.0"
 kayak_ui = { git = "https://github.com/StarArawn/kayak_ui", features = [
     "bevy_renderer",
 ] }
+bevy_asset_loader = "0.11"

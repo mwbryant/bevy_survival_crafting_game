@@ -1,5 +1,5 @@
 use crate::prelude::{Player, TILE_SIZE};
-use crate::{HEIGHT, RESOLUTION};
+use crate::{GameState, HEIGHT, RESOLUTION};
 use bevy::prelude::*;
 use bevy::render::camera::{Camera2d, ScalingMode};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
@@ -16,19 +16,13 @@ pub struct CameraFollower {
 
 impl Plugin for GameCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system_to_stage(
-            StartupStage::PreStartup,
-            Self::spawn_camera.label("camera"),
+        app.add_system_set(
+            SystemSet::on_enter(GameState::Main).with_system(Self::spawn_camera.label("camera")),
         )
-        .add_system_to_stage(
-            CoreStage::PostUpdate,
-            Self::camera_follow.after(Self::camera_follows_player),
-        )
-        .add_system_to_stage(
-            //The camera transform should update its position after all other transforms to prevent non-deterministic behavior and jitter
-            //For example, without this, some times you run the game the player will be visibly rendered in the wrong position when moving
-            CoreStage::PostUpdate,
-            Self::camera_follows_player,
+        .add_system_set(
+            SystemSet::on_update(GameState::Main)
+                .with_system(Self::camera_follow.after(Self::camera_follows_player))
+                .with_system(Self::camera_follows_player),
         )
         .register_inspectable::<CameraFollower>();
     }
