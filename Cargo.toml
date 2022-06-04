@@ -14,3 +14,7 @@ bevy = { version = "0.7.0", features = ["dynamic"] }
 bevy-inspector-egui = "0.10.0"
 serde = "1.0.136"
 ron = "0.7.0"
+kayak_ui = { git = "https://github.com/StarArawn/kayak_ui", features = [
+    "bevy_renderer",
+] }
+bevy_asset_loader = "0.11"

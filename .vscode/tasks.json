@@ -27,6 +27,15 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "cargo build",
+            "type": "shell",
+            "command": "~/.cargo/bin/cargo fmt && ~/.cargo/bin/cargo build", // note: full path to the cargo
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }

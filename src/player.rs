@@ -1,28 +1,30 @@
-use crate::inventory::InventoryBox;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::prelude::*;
+use crate::{prelude::*, GameState};
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(Self::spawn_player)
-            .add_startup_system(Self::spawn_hand_ui)
-            .add_system(Self::player_movement)
-            .add_system(Self::player_pickup)
-            .add_system(Self::player_equip)
-            .add_system(Self::update_hand_ui)
-            .register_inspectable::<Hands>()
-            .register_inspectable::<Player>();
+        app.add_system_set(
+            SystemSet::on_enter(GameState::Main).with_system(Self::spawn_player.after("graphics")),
+        )
+        .add_system_set(
+            SystemSet::on_update(GameState::Main)
+                .with_system(Self::player_movement)
+                .with_system(Self::player_pickup)
+                .with_system(change_tool),
+        )
+        .register_inspectable::<Hands>()
+        .register_inspectable::<Player>();
     }
 }
 
 #[derive(Component, Inspectable, Default)]
 pub struct Hands {
-    tool: Option<Tool>,
+    pub tool: Option<Tool>,
 }
 #[derive(Component)]
 pub struct HandsBox;
@@ -34,48 +36,6 @@ pub struct Player {
 }
 
 impl PlayerPlugin {
-    fn player_equip(
-        mut player_query: Query<(&Player, &mut Inventory, &mut Hands)>,
-        inventory_boxes: Query<(&GlobalTransform, &InventoryBox)>,
-        mouse: Res<Input<MouseButton>>,
-        mouse_pos: Res<MousePosition>,
-    ) {
-        let (_, mut inventory, mut hands) = player_query.single_mut();
-        if mouse.just_pressed(MouseButton::Left) {
-            for (transform, inv_box) in inventory_boxes.iter() {
-                // 80% of the dimensions of the box, that's 0.4 in either direction
-                if !(mouse_pos.0.x > transform.translation.x - 0.4
-                    && mouse_pos.0.x < transform.translation.x + 0.4
-                    && mouse_pos.0.y > transform.translation.y - 0.4
-                    && mouse_pos.0.y < transform.translation.y + 0.4)
-                {
-                    continue;
-                }
-                if let ItemType::Tool(tool) = inventory.items[inv_box.slot].item {
-                    if let Err(error) = inventory.remove(&ItemAndCount {
-                        item: ItemType::Tool(tool),
-                        count: 1,
-                    }) {
-                        warn!("{:?}", error);
-                    };
-                    if let Some(tool) = hands.tool {
-                        if inventory
-                            .add(&ItemAndCount {
-                                item: ItemType::Tool(tool),
-                                count: 1,
-                            })
-                            .is_some()
-                        {
-                            //FIXME removing what was in hand might not be able to go back into inventory
-                            warn!("Item was lost! on unequip");
-                        }
-                    }
-                    hands.tool = Some(tool);
-                }
-            }
-        }
-    }
-
     //XXX is this better to be 2 systems... its a bit much
     fn player_pickup(
         mut commands: Commands,
@@ -122,7 +82,7 @@ impl PlayerPlugin {
                     item: pickup.item,
                     count: 1,
                 };
-                if inventory.can_add(pickup_and_count) {
+                if inventory.can_add(&pickup_and_count) {
                     inventory.add(&pickup_and_count);
                     commands.entity(ent).despawn_recursive();
                 } else {
@@ -134,7 +94,7 @@ impl PlayerPlugin {
                     item: harvest.item,
                     count: 1,
                 };
-                if inventory.can_add(harvest_and_count) {
+                if inventory.can_add(&harvest_and_count) {
                     if hands.tool == harvest.tool_required || harvest.tool_required.is_none() {
                         inventory.add(&harvest_and_count);
                         commands.entity(ent).despawn_recursive();
@@ -176,24 +136,6 @@ impl PlayerPlugin {
         }
     }
 
-    fn update_hand_ui(
-        graphics: Res<Graphics>,
-        mut hands_box: Query<(&mut Visibility, &mut TextureAtlasSprite), With<HandsBox>>,
-        hands: Query<&Hands>,
-    ) {
-        let (mut visible, mut sprite) = hands_box.single_mut();
-        let hands = hands.single();
-        match hands.tool {
-            Some(tool) => {
-                visible.is_visible = true;
-                *sprite = graphics.item_map[&WorldObject::Item(ItemType::Tool(tool))].clone();
-            }
-            None => {
-                visible.is_visible = false;
-            }
-        }
-    }
-
     fn spawn_player(mut commands: Commands, graphics: Res<Graphics>) {
         let mut sprite = TextureAtlasSprite::new(graphics.player_index);
         sprite.custom_size = Some(Vec2::splat(1.));
@@ -213,47 +155,50 @@ impl PlayerPlugin {
                 arm_length: 1.0,
             })
             .insert(Inventory::default())
-            .insert(Hands::default())
+            .insert(Hands { tool: None })
             .insert(Name::new("Player"));
     }
+}
 
-    fn spawn_hand_ui(mut commands: Commands, graphics: Res<Graphics>) {
-        let mut sprite = TextureAtlasSprite::new(graphics.box_index);
-        sprite.custom_size = Some(Vec2::splat(1.));
-
-        let hand_graphic = commands
-            .spawn_bundle(SpriteSheetBundle {
-                sprite: sprite,
-                texture_atlas: graphics.texture_atlas.clone(),
-                transform: Transform {
-                    translation: Vec3::ZERO,
-                    ..Default::default()
-                },
-                visibility: Visibility { is_visible: false },
-                ..default()
-            })
-            .insert(HandsBox)
-            .id();
-
-        let mut sprite = TextureAtlasSprite::new(graphics.box_index);
-        sprite.custom_size = Some(Vec2::splat(1.));
-        let ui_box = commands
-            .spawn_bundle(SpriteSheetBundle {
-                sprite: sprite,
-                texture_atlas: graphics.texture_atlas.clone(),
-                transform: Transform {
-                    translation: Vec3::new(7.0, -4.0, -1.0),
-                    ..Default::default()
-                },
-                ..Default::default()
-            })
-            .add_child(hand_graphic)
-            .id();
-
-        commands
-            .spawn_bundle(TransformBundle::default())
-            .insert(CameraFollower::default())
-            .insert(Name::new("Hand UI"))
-            .add_child(ui_box);
+pub fn change_tool(
+    mut event_reader: EventReader<UIEvent>,
+    mut query: Query<(&mut Inventory, &mut Hands), With<Player>>,
+) {
+    let mut opt_tool: Option<Tool> = None;
+    for ev in event_reader.iter() {
+        match ev.0.clone() {
+            UIEventType::InventoryEvent(item) => {
+                opt_tool = match item.item {
+                    ItemType::Tool(t) => Some(t),
+                    _ => None,
+                };
+            }
+            _ => {}
+        };
     }
+
+    if opt_tool.is_none() {
+        return;
+    };
+
+    let (mut inventory, mut hands) = query.single_mut();
+    if hands.tool.is_some() {
+        if !inventory.can_add(&ItemAndCount {
+            item: ItemType::Tool(hands.tool.unwrap()),
+            count: 1,
+        }) {
+            return;
+        };
+        inventory.add(&ItemAndCount {
+            item: ItemType::Tool(hands.tool.unwrap()),
+            count: 1,
+        });
+    }
+
+    hands.tool = opt_tool;
+    let result = inventory.remove(&ItemAndCount {
+        item: ItemType::Tool(opt_tool.unwrap()),
+        count: 1,
+    });
+    info!("{:?}", result);
 }

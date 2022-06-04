@@ -196,10 +196,7 @@ impl Material2d for FireMaterial {
 impl RenderAsset for FireMaterial {
     type ExtractedAsset = FireMaterial;
     type PreparedAsset = FireMaterialGpu;
-    type Param = (
-        SRes<RenderDevice>,
-        SRes<Material2dPipeline<FireMaterial>>,
-    );
+    type Param = (SRes<RenderDevice>, SRes<Material2dPipeline<FireMaterial>>);
 
     fn extract_asset(&self) -> Self::ExtractedAsset {
         self.clone()
@@ -209,7 +206,6 @@ impl RenderAsset for FireMaterial {
         extracted_asset: Self::ExtractedAsset,
         (render_device, pipeline): &mut bevy::ecs::system::SystemParamItem<Self::Param>,
     ) -> Result<Self::PreparedAsset, render_asset::PrepareAssetError<Self::ExtractedAsset>> {
-
         let mut fires = [FireGpu::default(); MAX_FIRES];
         let data = extracted_asset.active_fires;
         for (i, fire) in data.iter().enumerate() {
