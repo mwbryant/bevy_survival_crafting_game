@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use serde::Deserialize;
 
-use crate::prelude::*;
+use crate::{build::PlaceableGhost, prelude::*};
 
 #[derive(Component, Inspectable)]
 pub struct CraftingBox {
@@ -22,7 +22,7 @@ pub struct CraftingBook {
 #[derive(Clone, Deserialize)]
 pub struct CraftingRecipe {
     pub(crate) needed: Vec<ItemAndCount>,
-    pub(crate) produces: ItemType,
+    pub(crate) produces: WorldObject,
 }
 
 pub struct CraftingPlugin;
@@ -45,41 +45,59 @@ impl Plugin for CraftingPlugin {
 impl CraftingPlugin {
     fn craft_item(
         mut event_reader: EventReader<UIEvent>,
-        mut inventory_query: Query<&mut Inventory, With<Player>>,
+        mut inventory_query: Query<(&mut Inventory, &mut PlaceableGhost), With<Player>>,
         crafting_book: Res<CraftingBook>,
     ) {
         for ev in event_reader.iter() {
             if let UIEventType::CraftEvent(item) = ev.0.clone() {
                 // get player inventory
-                let mut inventory = inventory_query.single_mut();
+                let (mut inventory, mut ghost) = inventory_query.single_mut();
 
                 // find recipe to craft
                 let recipe_to_craft = crafting_book
                     .recipes
                     .iter()
-                    .filter(|recipe| recipe.produces == item.item)
+                    .filter(|recipe| recipe.produces == item)
                     .collect::<Vec<&CraftingRecipe>>()[0];
 
-                // make sure inventory has ingredients and space to store new item
-                if inventory.ingredients_available(recipe_to_craft)
-                    && inventory.can_add(&ItemAndCount {
-                        item: recipe_to_craft.produces,
-                        count: 1,
-                    })
-                {
-                    // remove ingredients
-                    recipe_to_craft.needed.iter().for_each(|ingredient| {
-                        inventory
-                            .remove(ingredient)
-                            .expect("removing ingredients failed")
-                    });
-                    // add newly crafted item
-                    inventory.add(&ItemAndCount {
-                        item: recipe_to_craft.produces,
-                        count: 1,
-                    });
-                } else {
-                    info!("either not enough ingredients or not enough space in inventory");
+                match recipe_to_craft.produces {
+                    WorldObject::Item(item) => {
+                        // make sure inventory has ingredients and space to store new item
+                        if inventory.ingredients_available(recipe_to_craft)
+                            && inventory.can_add(&ItemAndCount {
+                                item: item,
+                                count: 1,
+                            })
+                        {
+                            // remove ingredients
+                            recipe_to_craft.needed.iter().for_each(|ingredient| {
+                                inventory
+                                    .remove(ingredient)
+                                    .expect("removing ingredients failed")
+                            });
+                            // add newly crafted item
+                            inventory.add(&ItemAndCount {
+                                item: item,
+                                count: 1,
+                            });
+                        } else {
+                            info!("either not enough ingredients or not enough space in inventory");
+                        }
+                    }
+                    //Making something placeable
+                    _ => {
+                        if inventory.ingredients_available(recipe_to_craft) {
+                            // remove ingredients
+                            recipe_to_craft.needed.iter().for_each(|ingredient| {
+                                inventory
+                                    .remove(ingredient)
+                                    .expect("removing ingredients failed")
+                            });
+                            ghost.to_place = Some(recipe_to_craft.produces);
+                        } else {
+                            info!("Not enough items!");
+                        }
+                    }
                 }
             }
         }

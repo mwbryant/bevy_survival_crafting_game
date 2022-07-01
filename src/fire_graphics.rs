@@ -9,7 +9,8 @@ use bevy::{prelude::*, sprite::Material2d};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use std::collections::HashMap;
 
-use crate::prelude::{CameraFollower, TILE_SIZE};
+use crate::item::WorldObject;
+use crate::prelude::*;
 
 pub struct FireGraphicsPlugin;
 
@@ -27,7 +28,7 @@ struct Fire {
 
 ///Resource containing all active fires
 #[derive(Clone, Default)]
-struct ActiveFires {
+pub struct ActiveFires {
     fires: HashMap<Entity, FireGpu>,
 }
 
@@ -57,7 +58,6 @@ impl Plugin for FireGraphicsPlugin {
             .init_resource::<ActiveFires>()
             .add_system(update_fire_overlay)
             .add_system_to_stage(CoreStage::PostUpdate, remove_fire_from_overlay)
-            .add_startup_system(spawn_fire)
             .add_startup_system(spawn_fire_overlay)
             .register_inspectable::<Fire>();
         app.sub_app_mut(RenderApp)
@@ -106,33 +106,20 @@ fn remove_fire_from_overlay(
     }
 }
 
-fn spawn_fire(mut commands: Commands, mut active_fires: ResMut<ActiveFires>) {
-    let mut fire = commands
-        .spawn_bundle(TransformBundle::default())
-        .insert(Fire { strength: 2.0 })
-        .insert(Name::new("Fire"))
-        .id();
-    active_fires.insert(
-        fire,
-        TransformBundle::default().local.translation.truncate(),
-        2.0,
-    );
-    fire = commands
-        .spawn_bundle(TransformBundle::from_transform(Transform::from_xyz(
-            0.5, 1.0, 0.0,
-        )))
-        .insert(Fire { strength: 1.0 })
-        .insert(Name::new("Fire"))
-        .id();
-    active_fires.insert(fire, Vec2::new(0.5, 1.0), 1.0);
-    fire = commands
-        .spawn_bundle(TransformBundle::from_transform(Transform::from_xyz(
-            -1.5, 2.0, 0.0,
-        )))
-        .insert(Fire { strength: 4.0 })
-        .insert(Name::new("Fire"))
-        .id();
-    active_fires.insert(fire, Vec2::new(-1.5, 2.0), 4.0);
+pub fn spawn_fire(
+    commands: &mut Commands,
+    active_fires: &mut ResMut<ActiveFires>,
+    graphics: &Res<Graphics>,
+    position: Vec2,
+) {
+    let fire = WorldObject::CampFire.spawn(commands, graphics, position);
+
+    commands
+        .entity(fire)
+        .insert(Fire { strength: 7.0 })
+        .insert(Name::new("Fire"));
+
+    active_fires.insert(fire, position, 7.0);
 }
 
 fn spawn_fire_overlay(

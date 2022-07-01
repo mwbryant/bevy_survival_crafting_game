@@ -25,6 +25,7 @@ pub enum WorldObject {
     Grass,
     PluckedGrass,
     GrowingTree,
+    CampFire,
 }
 
 #[derive(Inspectable, Debug, PartialEq, Eq, Clone, Copy, Hash, Deserialize)]
@@ -41,8 +42,6 @@ pub enum ItemType {
     Twig,
     Grass,
     Wood,
-    //FIXME Is actually not an item, is a world object!
-    Fire,
 }
 
 impl ItemType {

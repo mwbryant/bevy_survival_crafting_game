@@ -1,0 +1,15 @@
+Day night
+Ghost for placeable object
+World interaction on UI
+Grey out impossible crafting recipes
+Boxes around inventory/crafting
+Inventory in a fixed place on screen, not moving as we pick up more things
+Hover to see crafting needed ingredients
+
+Big stuff:
+World Generation
+Health, stats
+Enemies,
+Combat(??)
+Hand torch
+Collisions (Heron physics?)

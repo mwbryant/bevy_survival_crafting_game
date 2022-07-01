@@ -119,7 +119,7 @@ impl GameAssetsPlugin {
         let sprite_desc = fs::read_to_string("assets/sprites_desc.ron").unwrap();
 
         let sprite_desc: GraphicsDesc = from_str(&sprite_desc).unwrap_or_else(|e| {
-            println!("Failed to load config: {}", e);
+            println!("Failed to load config for graphics: {}", e);
             std::process::exit(1);
         });
 

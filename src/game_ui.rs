@@ -1,5 +1,5 @@
 use crate::{
-    item::{ItemAndCount, ItemType},
+    item::{ItemAndCount, ItemType, WorldObject},
     prelude::{HandUI, InventoryUI, RecipeUI},
     GameState, HEIGHT, RESOLUTION,
 };
@@ -22,7 +22,7 @@ pub struct UIEvent(pub UIEventType);
 #[derive(Debug, Clone, PartialEq)]
 pub enum UIEventType {
     None,
-    CraftEvent(ItemAndCount),
+    CraftEvent(WorldObject),
     ToolEvent(ItemAndCount),
     InventoryEvent(ItemAndCount),
 }
@@ -34,9 +34,11 @@ impl UIEventType {
                 item: ItemType::None,
                 count: 0,
             },
-            UIEventType::CraftEvent(i)
-            | UIEventType::ToolEvent(i)
-            | UIEventType::InventoryEvent(i) => i,
+            UIEventType::CraftEvent(_i) => ItemAndCount {
+                item: ItemType::None,
+                count: 1,
+            },
+            UIEventType::ToolEvent(i) | UIEventType::InventoryEvent(i) => i,
         }
     }
 }
@@ -50,7 +52,7 @@ impl Default for UIEventType {
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct UIItems {
     pub inventory_items: Vec<ItemAndCount>,
-    pub crafting_items: Vec<ItemAndCount>,
+    pub crafting_items: Vec<WorldObject>,
     pub hand_item: Option<ItemAndCount>,
 }
 

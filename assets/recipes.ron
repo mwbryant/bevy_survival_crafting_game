@@ -11,7 +11,7 @@
                     count: 1,
                 ),
             ],
-            produces: Tool(Axe),
+            produces: Item(Tool(Axe)),
         ),
         CraftingRecipe (
             needed: [
@@ -24,12 +24,20 @@
                     count: 2,
                 ),
             ],
-            produces: Tool(Shovel),
+            produces: Item(Tool(Shovel)),
         ),
         CraftingRecipe (
             needed: [
+                ItemAndCount (
+                    item: Grass,
+                    count: 1,
+                ),
+                ItemAndCount (
+                    item: Wood,
+                    count: 1,
+                ),
             ],
-            produces: Fire,
+            produces: CampFire,
         ),
     ],
 )

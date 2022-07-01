@@ -36,11 +36,6 @@
             size: (16., 16.),
             anchor: None,
         ),
-        Item(Fire): MyRect(
-            pos: (128., 0.),
-            size: (32., 32.),
-            anchor: None,
-        ),
 
         //Other world objects
         Sapling: MyRect(
@@ -77,6 +72,11 @@
             pos: (176., 48.),
             size: (16., 16.),
             anchor: Some((8., 12.)),
+        ),
+        CampFire: MyRect(
+            pos: (128., 0.),
+            size: (32., 32.),
+            anchor: None,
         ),
     }
 )

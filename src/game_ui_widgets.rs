@@ -134,14 +134,14 @@ pub fn RecipeUI(ui_props: UIProps) {
     context.bind(&ui_items);
 
     let handles = context.query_world::<Res<Graphics>, _, _>(|graphics| graphics.image_map.clone());
-    let ii = ui_items.get().crafting_items;
+    let crafting_items = ui_items.get().crafting_items;
 
     rsx! {
         <Element styles={ui_props.styles.clone()}>
-        {VecTracker::from(ii.iter().map(|item| {
+        {VecTracker::from(crafting_items.iter().map(|item| {
             constructor! {
                 <Item event_type={UIEventType::CraftEvent(*item)}
-                handle={Some(handles.get(&WorldObject::Item(item.item)).unwrap().clone())}/>
+                handle={println!("{:?}", item); Some(handles.get(item).unwrap().clone())}/>
             }
         }))}
         </ Element>

@@ -133,14 +133,7 @@ fn update_inventory_ui(
         });
 
         // get crafting items for ui
-        let crafting_items = crafting_book
-            .recipes
-            .iter()
-            .map(|r| ItemAndCount {
-                item: r.produces,
-                count: 1,
-            })
-            .collect();
+        let crafting_items = crafting_book.recipes.iter().map(|r| r.produces).collect();
 
         // update ui by updating binding object
         ui_items.set(UIItems {

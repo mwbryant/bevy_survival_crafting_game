@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::{prelude::*, GameState};
+use crate::{build::PlaceableGhost, prelude::*, GameState};
 
 pub struct PlayerPlugin;
 
@@ -156,6 +156,7 @@ impl PlayerPlugin {
             })
             .insert(Inventory::default())
             .insert(Hands { tool: None })
+            .insert(PlaceableGhost { to_place: None })
             .insert(Name::new("Player"));
     }
 }

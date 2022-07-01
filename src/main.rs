@@ -6,6 +6,7 @@ use bevy_asset_loader::*;
 use bevy_inspector_egui::{WorldInspectorParams, WorldInspectorPlugin};
 
 mod assets;
+mod build;
 mod crafting;
 mod error;
 mod fire_graphics;
@@ -18,6 +19,7 @@ mod mouse;
 mod player;
 mod prelude;
 
+use build::BuildingPlugin;
 use mouse::MousePlugin;
 // todo implement `PluginGroup`
 use prelude::{
@@ -69,6 +71,7 @@ fn main() {
         .add_plugin(MousePlugin)
         .add_plugin(ItemsPlugin)
         .add_plugin(InventoryPlugin)
+        .add_plugin(BuildingPlugin)
         .add_plugin(CraftingPlugin)
         .add_plugin(FireGraphicsPlugin)
         .add_plugin(GameUIPlugin)

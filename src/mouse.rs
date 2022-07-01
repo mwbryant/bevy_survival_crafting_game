@@ -5,6 +5,7 @@ use bevy::{
 
 pub struct MousePlugin;
 
+#[derive(Deref)]
 pub struct MousePosition(pub Vec2);
 
 impl Plugin for MousePlugin {
