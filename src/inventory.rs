@@ -73,7 +73,7 @@ impl Inventory {
 
     pub fn can_add(&self, item_and_count: &ItemAndCount) -> bool {
         let mut inventory_clone = self.clone();
-        inventory_clone.add(&item_and_count).is_none()
+        inventory_clone.add(item_and_count).is_none()
     }
 
     pub fn remove(&mut self, item_and_count: &ItemAndCount) -> Result<(), GameError> {
@@ -122,7 +122,6 @@ fn update_inventory_ui(
         // get inventory items for ui
         let inventory_items = inventory
             .items
-            .to_vec()
             .into_iter()
             .filter(|ic| ic.item != ItemType::None)
             .collect();

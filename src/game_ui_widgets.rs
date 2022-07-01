@@ -7,7 +7,7 @@ use kayak_ui::{
         styles::{Edge, Style, StyleProp, Units},
         use_state, widget, Binding, Bound, Color, EventType, OnEvent, VecTracker, WidgetProps,
     },
-    widgets::{Button, Element, If, Image, Text},
+    widgets::{Button, Element, Image},
 };
 
 use crate::{
@@ -55,7 +55,7 @@ pub fn Item(props: ItemProps) {
         manager.get(&props.handle.clone().unwrap())
     });
 
-    let item_name = format!(
+    let _item_name = format!(
         "{} x{}",
         props.clone().event_type.item_and_count().item.name(),
         props.clone().event_type.item_and_count().count
@@ -85,7 +85,7 @@ pub fn InventoryUI(ui_props: UIProps) {
         {VecTracker::from(ii.iter().map(|item| {
             constructor! {
                 <Item event_type=
-                {UIEventType::InventoryEvent(item.clone())}
+                {UIEventType::InventoryEvent(*item)}
                 handle={Some(handles.get(&WorldObject::Item(item.item)).unwrap().clone())}/>
             }
         }))}
@@ -131,7 +131,7 @@ pub fn RecipeUI(ui_props: UIProps) {
         <Element styles={ui_props.styles.clone()}>
         {VecTracker::from(ii.iter().map(|item| {
             constructor! {
-                <Item event_type={UIEventType::CraftEvent(item.clone())}
+                <Item event_type={UIEventType::CraftEvent(*item)}
                 handle={Some(handles.get(&WorldObject::Item(item.item)).unwrap().clone())}/>
             }
         }))}

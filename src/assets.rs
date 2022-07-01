@@ -1,5 +1,4 @@
 use std::fs;
-use std::time::Duration;
 
 use bevy::prelude::*;
 use bevy::reflect::erased_serde::private::serde::Deserialize;
@@ -81,7 +80,7 @@ fn convert_to_image(
     //Every pixel is 4 entries in image.data
     let mut starting_index =
         (sprite_desc.pos.0 + original_image.size().x * sprite_desc.pos.1) as usize;
-    for y in 0..sprite_desc.size.1 as usize {
+    for _y in 0..sprite_desc.size.1 as usize {
         for x in 0..sprite_desc.size.0 as usize {
             let index = starting_index + x;
             //Copy 1 pixel at index

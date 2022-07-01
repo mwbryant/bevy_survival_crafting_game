@@ -9,7 +9,7 @@ use kayak_ui::{
     core::{
         bind, render, rsx,
         styles::{Edge, LayoutType, Style as KayakStyle, StyleProp, Units},
-        widget, Index, WidgetProps,
+        widget, WidgetProps,
     },
     widgets::{App, Window},
 };

@@ -166,15 +166,12 @@ pub fn change_tool(
 ) {
     let mut opt_tool: Option<Tool> = None;
     for ev in event_reader.iter() {
-        match ev.0.clone() {
-            UIEventType::InventoryEvent(item) => {
-                opt_tool = match item.item {
-                    ItemType::Tool(t) => Some(t),
-                    _ => None,
-                };
-            }
-            _ => {}
-        };
+        if let UIEventType::InventoryEvent(item) = ev.0.clone() {
+            opt_tool = match item.item {
+                ItemType::Tool(t) => Some(t),
+                _ => None,
+            };
+        }
     }
 
     if opt_tool.is_none() {
