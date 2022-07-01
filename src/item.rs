@@ -46,6 +46,7 @@ pub enum ItemType {
 }
 
 impl ItemType {
+    #[allow(dead_code)]
     pub fn name(self) -> String {
         match self {
             ItemType::Tool(tool) => format!("{:?}", tool),

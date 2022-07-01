@@ -1,5 +1,5 @@
 //Gross as BevyImage
-use bevy::prelude::{EventWriter, Handle, Image as BevyImage, Res, ResMut};
+use bevy::prelude::{default, EventWriter, Handle, Image as BevyImage, Res, ResMut};
 use kayak_ui::{
     bevy::ImageManager,
     core::{
@@ -7,7 +7,7 @@ use kayak_ui::{
         styles::{Edge, Style, StyleProp, Units},
         use_state, widget, Binding, Bound, Color, EventType, OnEvent, VecTracker, WidgetProps,
     },
-    widgets::{Button, Element, Image},
+    widgets::{Button, Element, Image, Text},
 };
 
 use crate::{
@@ -29,11 +29,18 @@ pub struct ItemProps {
 #[widget]
 pub fn Item(props: ItemProps) {
     let button_style = Style {
-        width: StyleProp::Value(Units::Pixels(70.0)),
+        width: StyleProp::Value(Units::Pixels(50.0)),
         height: StyleProp::Value(Units::Pixels(50.0)),
-        color: StyleProp::Value(Color::new(1., 0., 0., 1.)),
+        background_color: StyleProp::Value(Color::TRANSPARENT),
+        //background_color: StyleProp::Value(Color::new(0.4, 0.4, 0.4, 1.0)),
         padding: StyleProp::Value(Edge::all(Units::Stretch(1.0))),
         ..props.styles.clone().unwrap_or_default()
+    };
+
+    let image_style = Style {
+        width: StyleProp::Value(Units::Pixels(45.0)),
+        height: StyleProp::Value(Units::Pixels(45.0)),
+        ..default()
     };
 
     let (clicked, set_clicked, ..) = use_state!(false);
@@ -55,16 +62,18 @@ pub fn Item(props: ItemProps) {
         manager.get(&props.handle.clone().unwrap())
     });
 
-    let _item_name = format!(
-        "{} x{}",
-        props.clone().event_type.item_and_count().item.name(),
-        props.clone().event_type.item_and_count().count
-    );
+    let item_count = format!("x{}", props.clone().event_type.item_and_count().count);
+
+    let text_style = Style {
+        right: StyleProp::Value(Units::Pixels(5.0)),
+        ..default()
+    };
+
     rsx! {
         <>
             <Button on_event={Some(on_click_event)} styles={Some(button_style)} disabled={props.disabled}>
-                //<Text content={item_name} />
-                <Image handle={handle} />
+                <Image handle={handle} styles={Some(image_style)} />
+                <Text content={item_count} styles={Some(text_style)} />
             </Button>
         </>
     }
