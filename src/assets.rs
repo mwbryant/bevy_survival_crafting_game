@@ -12,6 +12,7 @@ use ron::de::from_str;
 
 pub struct GameAssetsPlugin;
 
+/// Used to describe the location and styling of sprites on the sprite sheet
 #[derive(Default, Clone, Copy, Debug, Reflect, Deserialize)]
 pub struct MyRect {
     pub pos: (f32, f32),
@@ -41,6 +42,7 @@ impl MyRect {
     }
 }
 
+/// Loaded from sprites_desc.ron and contains the description of every sprite in the game
 #[derive(Deserialize)]
 pub struct GraphicsDesc {
     map: HashMap<WorldObject, MyRect>,
@@ -59,6 +61,8 @@ pub const PIXEL_SCALE: f32 = 3.;
 pub const SOURCE_TILE_SIZE: f32 = 32.;
 pub const TILE_SIZE: f32 = SOURCE_TILE_SIZE * PIXEL_SCALE;
 
+/// The great Graphics Resource, used by everything that needs to create sprites
+/// Contains an image map which is the work around for UI not supporting texture atlas sprites
 pub struct Graphics {
     pub texture_atlas: Handle<TextureAtlas>,
     pub player_index: usize,
@@ -67,6 +71,8 @@ pub struct Graphics {
     pub image_map: HashMap<WorldObject, Handle<Image>>,
 }
 
+/// Work around helper function to convert texture atlas sprites into stand alone image handles
+/// Copies sprite data pixel by pixel, needed to render things in UI
 fn convert_to_image(
     sprite_desc: MyRect,
     original_image: Handle<Image>,
@@ -108,6 +114,8 @@ fn convert_to_image(
 }
 
 impl GameAssetsPlugin {
+    /// Startup system that runs after images are loaded, indexes all loaded images
+    /// and creates the graphics resource
     fn load_graphics(
         mut commands: Commands,
         mut image_assets: ResMut<Assets<Image>>,

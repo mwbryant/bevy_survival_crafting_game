@@ -7,7 +7,8 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 pub struct GameCameraPlugin;
 
 /// Marks something that should always be in a constant place on screen,
-/// used for UI
+/// Currently only used for the campfire overlay but there are probably better
+/// ways of handling this
 #[derive(Component, Default, Inspectable)]
 pub struct CameraFollower {
     //TODO find a better way to force ordering

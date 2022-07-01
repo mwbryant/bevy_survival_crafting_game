@@ -16,10 +16,11 @@ use kayak_ui::{
 
 pub struct GameUIPlugin;
 
+/// Core event trigger by clicking on items in the UI
 #[derive(Debug)]
 pub struct UIEvent(pub UIEventType);
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UIEventType {
     None,
     CraftEvent(WorldObject),
@@ -62,6 +63,7 @@ pub struct UIProps {
     pub styles: Option<KayakStyle>,
 }
 
+/// Main root widget for our game UI
 #[widget]
 fn GameUI() {
     let row_style = KayakStyle {

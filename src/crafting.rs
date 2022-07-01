@@ -6,6 +6,8 @@ use serde::Deserialize;
 
 use crate::{build::PlaceableGhost, prelude::*};
 
+/// Currently Unused but needs to be reincorperated with UI to render the outline
+/// of the box and grey out contents (or deleted)
 #[derive(Component, Inspectable)]
 pub struct CraftingBox {
     //TODO grey out currently impossible recipes
@@ -14,11 +16,14 @@ pub struct CraftingBox {
     recipe_index: usize,
 }
 
+/// Resource loaded from recipes.ron
+/// Contains all valid recipes currently in the game
 #[derive(Clone, Deserialize)]
 pub struct CraftingBook {
     pub(crate) recipes: Vec<CraftingRecipe>,
 }
 
+// The description of a single recipe
 #[derive(Clone, Deserialize)]
 pub struct CraftingRecipe {
     pub(crate) needed: Vec<ItemAndCount>,
@@ -43,13 +48,16 @@ impl Plugin for CraftingPlugin {
 }
 
 impl CraftingPlugin {
+    /// A system to respond to crafting UI Events
+    /// Checks if the player can craft something, manages inventory juggling, and sets the ghost if
+    /// the item is placeable
     fn craft_item(
         mut event_reader: EventReader<UIEvent>,
         mut inventory_query: Query<(&mut Inventory, &mut PlaceableGhost), With<Player>>,
         crafting_book: Res<CraftingBook>,
     ) {
         for ev in event_reader.iter() {
-            if let UIEventType::CraftEvent(item) = ev.0.clone() {
+            if let UIEventType::CraftEvent(item) = ev.0 {
                 // get player inventory
                 let (mut inventory, mut ghost) = inventory_query.single_mut();
 

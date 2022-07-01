@@ -136,6 +136,7 @@ impl PlayerPlugin {
         }
     }
 
+    /// Creates the single player entity, add all new player components here
     fn spawn_player(mut commands: Commands, graphics: Res<Graphics>) {
         let mut sprite = TextureAtlasSprite::new(graphics.player_index);
         sprite.custom_size = Some(Vec2::splat(1.));
@@ -161,13 +162,14 @@ impl PlayerPlugin {
     }
 }
 
+/// A system which handles the ui events clicking on tools in the inventory
 pub fn change_tool(
     mut event_reader: EventReader<UIEvent>,
     mut query: Query<(&mut Inventory, &mut Hands), With<Player>>,
 ) {
     let mut opt_tool: Option<Tool> = None;
     for ev in event_reader.iter() {
-        if let UIEventType::InventoryEvent(item) = ev.0.clone() {
+        if let UIEventType::InventoryEvent(item) = ev.0 {
             opt_tool = match item.item {
                 ItemType::Tool(t) => Some(t),
                 _ => None,

@@ -15,6 +15,7 @@ pub struct Harvestable {
     pub(crate) drops: Option<WorldObject>,
 }
 
+/// The core enum of the game, lists everything that can be held or placed in the game
 #[derive(Debug, Inspectable, PartialEq, Eq, Clone, Copy, Hash, Deserialize, Component)]
 pub enum WorldObject {
     Item(ItemType),
@@ -28,12 +29,7 @@ pub enum WorldObject {
     CampFire,
 }
 
-#[derive(Inspectable, Debug, PartialEq, Eq, Clone, Copy, Hash, Deserialize)]
-pub enum Tool {
-    Axe,
-    Shovel,
-}
-
+/// Everything that can be in the players inventory
 #[derive(Inspectable, Debug, PartialEq, Eq, Clone, Copy, Hash, Deserialize)]
 pub enum ItemType {
     None,
@@ -42,6 +38,13 @@ pub enum ItemType {
     Twig,
     Grass,
     Wood,
+}
+
+/// Everything the player can equip
+#[derive(Inspectable, Debug, PartialEq, Eq, Clone, Copy, Hash, Deserialize)]
+pub enum Tool {
+    Axe,
+    Shovel,
 }
 
 impl ItemType {
@@ -109,6 +112,7 @@ impl WorldObject {
         }
     }
 
+    /// TODO it would be great to describe this outside of code, in a config or something
     pub fn grows_into(&self) -> Option<WorldObject> {
         match self {
             WorldObject::DeadSapling => Some(WorldObject::Sapling),
@@ -118,6 +122,7 @@ impl WorldObject {
         }
     }
 
+    /// TODO it would be great to describe this outside of code, in a config or something
     pub fn as_harvest(&self) -> Option<Harvestable> {
         match self {
             WorldObject::Sapling => Some(Harvestable {
@@ -192,6 +197,7 @@ pub struct GrowthTimer {
 }
 
 impl ItemsPlugin {
+    /// Ticks the timers for everything in the world that can regrow and calls grow on them
     fn world_object_growth(
         mut commands: Commands,
         time: Res<Time>,
@@ -210,6 +216,7 @@ impl ItemsPlugin {
         }
     }
 
+    /// Keeps the graphics up to date for things that are harvested or grown
     fn update_graphics(
         mut to_update_query: Query<(&mut TextureAtlasSprite, &WorldObject), Changed<WorldObject>>,
         graphics: Res<Graphics>,
@@ -224,6 +231,7 @@ impl ItemsPlugin {
         }
     }
 
+    /// Creates our testing map
     #[allow(clippy::vec_init_then_push)]
     fn spawn_test_objects(mut commands: Commands, graphics: Res<Graphics>) {
         let mut children = Vec::new();

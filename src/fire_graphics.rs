@@ -14,19 +14,25 @@ use crate::prelude::*;
 
 pub struct FireGraphicsPlugin;
 
+/// TODO I don't know for sure that this is properly enforced
 pub const MAX_FIRES: usize = 64;
 
-#[derive(Clone, Component, Default, AsStd140, Copy)]
-struct FireGpu {
-    position: Vec2,
-    strength: f32,
-}
+/// The component marking an entity as being a campfire
 #[derive(Clone, Component, Inspectable)]
 struct Fire {
     strength: f32,
 }
 
-///Resource containing all active fires
+/// The buffer data for fires in a GPU represntation
+#[derive(Clone, Component, Default, AsStd140, Copy)]
+struct FireGpu {
+    position: Vec2,
+    strength: f32,
+}
+
+/// Resource containing all active fires
+/// It might be nice to not need this in the future
+/// FIXME remove this completely and just query for the fires
 #[derive(Clone, Default)]
 pub struct ActiveFires {
     fires: HashMap<Entity, FireGpu>,
@@ -46,6 +52,7 @@ impl ActiveFires {
     }
 }
 
+/// The actual material responsible for rendering fires
 #[derive(Clone, TypeUuid, Default)]
 #[uuid = "88d1793a-f685-4f16-aad8-42e9a07dd6b8"]
 struct FireMaterial {
@@ -66,10 +73,12 @@ impl Plugin for FireGraphicsPlugin {
     }
 }
 
+/// TODO use a query instead of this resource
 fn extract_fire(mut commands: Commands, fires: Res<ActiveFires>) {
     commands.insert_resource(fires.clone());
 }
 
+/// TODO use a query instead of this resource
 fn prepare_fire(
     render_queue: Res<RenderQueue>,
     active_fires: Res<ActiveFires>,
@@ -85,6 +94,7 @@ fn prepare_fire(
     }
 }
 
+/// TODO remove this when we stop using active fires
 fn update_fire_overlay(
     changed_fires: Query<
         (Entity, &Fire, &Transform),
@@ -97,6 +107,7 @@ fn update_fire_overlay(
     }
 }
 
+/// TODO remove this when we stop using active fires
 fn remove_fire_from_overlay(
     removed_fire: RemovedComponents<Fire>,
     mut active_fires: ResMut<ActiveFires>,
@@ -106,6 +117,8 @@ fn remove_fire_from_overlay(
     }
 }
 
+/// Helper function to spawn campfires
+/// TODO remove active fires
 pub fn spawn_fire(
     commands: &mut Commands,
     active_fires: &mut ResMut<ActiveFires>,
@@ -122,6 +135,7 @@ pub fn spawn_fire(
     active_fires.insert(fire, position, 7.0);
 }
 
+// Creates a single instance of the campfire overlay material and make it follow the camera
 fn spawn_fire_overlay(
     mut commands: Commands,
     mut mesh_assets: ResMut<Assets<Mesh>>,

@@ -8,23 +8,18 @@ use crate::{
 };
 
 pub const INVENTORY_SIZE: usize = 7;
+/// Incomplete but should be used to limit number of a given item
 pub const INVENTORY_ITEM_SIZE: usize = 5;
 
 pub struct InventoryPlugin;
 
+/// Main tracker for the player inventory
 #[derive(Component, Default, Inspectable, Clone)]
 pub struct Inventory {
     pub items: [ItemAndCount; INVENTORY_SIZE],
 }
 
-#[derive(Component)]
-pub struct InventoryBox {
-    pub slot: usize,
-}
-
-#[derive(Component)]
-pub struct InventoryBoxContents;
-
+/// may be unused
 pub struct InventoryOverflow(pub usize);
 
 impl Plugin for InventoryPlugin {
@@ -110,6 +105,8 @@ impl Inventory {
     }
 }
 
+/// Main system which tracks what should be rendered in UI
+/// FIXME this probably doesn't belong here
 fn update_inventory_ui(
     inventory_query: Query<
         (&Inventory, &Hands),

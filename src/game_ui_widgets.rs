@@ -5,7 +5,7 @@ use kayak_ui::{
     core::{
         constructor, rsx,
         styles::{Edge, Style, StyleProp, Units},
-        use_state, widget, Binding, Bound, Color, EventType, OnEvent, VecTracker, WidgetProps,
+        widget, Binding, Bound, Color, EventType, OnEvent, VecTracker, WidgetProps,
     },
     widgets::{Button, Element, Image, Text},
 };
@@ -43,18 +43,13 @@ pub fn Item(props: ItemProps) {
         ..default()
     };
 
-    let (clicked, set_clicked, ..) = use_state!(false);
+    let ui_event = props.event_type;
 
-    if clicked {
-        context.query_world::<EventWriter<UIEvent>, _, _>(|mut ev| {
-            ev.send(UIEvent(props.event_type.clone()));
-            set_clicked(false);
-        });
-    }
-
-    let on_click_event = OnEvent::new(move |_, event| {
+    let on_click_event = OnEvent::new(move |context, event| {
         if let EventType::Click(..) = event.event_type {
-            set_clicked(true);
+            context.query_world::<EventWriter<UIEvent>, _, _>(move |mut ev| {
+                ev.send(UIEvent(ui_event));
+            });
         }
     });
 

@@ -5,6 +5,8 @@ use crate::{
 };
 use bevy::prelude::*;
 
+/// Only used on the player to indicate if there is a world object currently waiting
+/// to be placed
 #[derive(Component)]
 pub struct PlaceableGhost {
     pub to_place: Option<WorldObject>,
@@ -18,12 +20,15 @@ impl Plugin for BuildingPlugin {
     }
 }
 
-//TODO it would be nice to not need active fires here
+/// Checks for mouse clicks and an object waiting to be placed and handles the spawning of
+/// the new world object
+/// TODO needs to check against clicking through UI
 fn build_ghost(
     mut commands: Commands,
     graphics: Res<Graphics>,
     mut player: Query<&mut PlaceableGhost>,
     mouse_input: Res<Input<MouseButton>>,
+    //TODO it would be nice to not need active fires here
     mut active_fires: ResMut<ActiveFires>,
     mouse_position: Res<MousePosition>,
 ) {

@@ -1,5 +1,6 @@
 use std::fmt;
 
+/// Under utilized error system, it would be great to see this grown!
 #[derive(Debug)]
 pub struct GameError {
     pub error_type: GameErrorType,
