@@ -1,6 +1,6 @@
 # Bevy Survival Crafting
 
-A surival crafting game in [Bevy](https://bevyengine.org/) designed after Don't Starve.
+A survival crafting game in [Bevy](https://bevyengine.org/) designed after Don't Starve.
 
 The player can move with WASD and pickup items with Space.  These will be placed into your inventory on the bottom bar of the screen.  If you gather the correct materials (flint and twigs) then some of the tools will highlight in the crafting menu on the left of the screen which can be crafted by clicking on their icons.  A tool can then be equiped by clicking on it in the inventory which will move it to the equiped slot in the bottom right.  Finally if you have equipped an axe then you are able to cut down the trees.
 
